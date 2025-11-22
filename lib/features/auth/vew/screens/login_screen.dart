@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:movies_app/features/auth/vew/screens/sign_up_screen.dart';
 
 import '../../../../core/utils/email_validator.dart';
 import '../../../../core/utils/password_validator.dart';
@@ -127,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 AccountPromptRow(
                   promptText: "Don't have an account?",
                   actionText: "Sign up",
-                  onActionPressed: () { Navigator.pushNamed(context, LoginScreen.routeName);
+                  onActionPressed: () { Navigator.push(context, MaterialPageRoute(builder: (context) => SignUpScreen(),));
                   },
                 ),
               ],
