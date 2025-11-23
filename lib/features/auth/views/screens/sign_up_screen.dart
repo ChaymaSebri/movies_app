@@ -1,13 +1,14 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
-
-import '../../../../core/utils/age_validator.dart';
-import '../../../../core/utils/email_validator.dart';
-import '../../../../core/utils/name_validator.dart';
-import '../../../../core/utils/password_validator.dart';
+import 'package:provider/provider.dart';
+import 'package:movies_app/core/constants/app_routes.dart';
+import 'package:movies_app/core/utils/image_picker_helper.dart';
+import 'package:movies_app/features/auth/controllers/auth_controller.dart';
+import 'package:movies_app/core/utils/validators/age_validator.dart';
+import 'package:movies_app/core/utils/validators/email_validator.dart';
+import 'package:movies_app/core/utils/validators/name_validator.dart';
+import 'package:movies_app/core/utils/validators/password_validator.dart';
 import '../widgets/account_prompt_row.dart';
 import '../widgets/divider_with_text.dart';
 
@@ -20,17 +21,13 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // Form key to manage form state
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  // Controls password field visibility
+  final TextEditingController passwordController = TextEditingController();
+  
   bool _obscurePassword = true;
-  TextEditingController passwordController = TextEditingController();
-  // Controls confirm password field visibility
   bool _obscureConfirmPassword = true;
-  // Loading state for signup operation
-  bool _isLoading = false;
-
-  XFile? _selectedProfilePicture;
+  
+  File? _selectedProfilePicture;
 
   // Form field values
   String firstName = '';
@@ -60,22 +57,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _selectProfilePhoto() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 100,
-    );
+    final image = await ImagePickerHelper.pickImage();
+    
     if (image != null) {
+      // Vérifier la validité de l'image
+      final isValid = await ImagePickerHelper.isValidImage(image);
+      
+      if (!isValid && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image invalide ou trop grande (max 5MB)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
       setState(() {
         _selectedProfilePicture = image;
       });
     }
   }
 
+ Future<void> _handleSignUp(AuthController authController) async {
+    // Validate form
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) {
+      return;
+    }
+    form.save();
+
+    // Attempt sign up
+    final success = await authController.signUp(
+      nom: lastName,
+      prenom: firstName,
+      age: age,
+      email: email,
+      password: password,
+      profilePicture: _selectedProfilePicture,
+    );
+
+    if (success && mounted) {
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to profile or home
+      Navigator.pushReplacementNamed(context, AppRoutes.profile);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Listen for auth state changes and redirect
-
+    final authController = Provider.of<AuthController>(context);
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -87,46 +125,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
             spacing: 32,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
-
             children: [
+              // Profile Photo Section
               Column(
                 spacing: 8,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: _selectProfilePhoto,
+                    onTap: authController.isLoading ? null : _selectProfilePhoto,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 96 / 2,
+                          radius: 48,
                           backgroundImage: _selectedProfilePicture != null
-                              ? FileImage(File(_selectedProfilePicture!.path))
-                                    as ImageProvider
+                              ? FileImage(_selectedProfilePicture!)
                               : null,
-                          backgroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.surface,
                           child: _selectedProfilePicture != null
                               ? null
-                              : Icon(Icons.person, size: 96 * 0.5),
+                              : Icon(
+                                  Icons.person,
+                                  size: 48,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                         ),
                         Positioned(
-                          right: 4,
-                          bottom: 4,
-                          child: Material(
-                            color: Theme.of(context).colorScheme.primary,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: _selectProfilePhoto,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: Icon(
-                                  Icons.add_a_photo,
-                                  size: 18,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimary,
-                                ),
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).scaffoldBackgroundColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Icon(
+                                Icons.add_a_photo,
+                                size: 16,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -135,27 +176,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   Text(
-                    "Add a profile photo",
-                    style: Theme.of(context).textTheme.bodySmall,
+                    "Add a profile photo (optional)",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
                   ),
                 ],
               ),
+
+              // Header
               Column(
                 children: [
-                  Text("Create an Account"),
-                  Text("Let's get you started and create your account."),
+                  Text(
+                    "Create an Account",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Let's get you started and create your account.",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
+
+              // Form
               Form(
                 key: _formKey,
                 child: Column(
                   spacing: 24,
                   children: [
+                    // First Name
                     TextFormField(
                       focusNode: _firstNameFocus,
                       decoration: const InputDecoration(
                         labelText: "First Name",
                         hintText: "Please enter your first name",
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: NameValidatorUtil.validatorWith(
                         requiredMessage: 'Please enter your first name',
@@ -168,11 +228,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) => _lastNameFocus.requestFocus(),
                     ),
+
+                    // Last Name
                     TextFormField(
                       focusNode: _lastNameFocus,
                       decoration: const InputDecoration(
                         labelText: "Last Name",
                         hintText: "Please enter your last name",
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: NameValidatorUtil.validatorWith(
                         requiredMessage: 'Please enter your last name',
@@ -185,11 +248,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) => _ageFocus.requestFocus(),
                     ),
+
+                    // Age
                     TextFormField(
                       focusNode: _ageFocus,
                       decoration: const InputDecoration(
                         labelText: "Age",
                         hintText: "Please enter your age",
+                        prefixIcon: Icon(Icons.cake_outlined),
                       ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -204,11 +270,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) => _emailFocus.requestFocus(),
                     ),
+
+                    // Email
                     TextFormField(
                       focusNode: _emailFocus,
                       decoration: const InputDecoration(
                         labelText: "Email",
                         hintText: "Please enter your email",
+                        prefixIcon: Icon(Icons.email_outlined),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: EmailValidatorUtil(
@@ -219,12 +288,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
                     ),
+
+                    // Password
                     TextFormField(
                       controller: passwordController,
                       focusNode: _passwordFocus,
                       decoration: InputDecoration(
                         labelText: "Password",
                         hintText: "Please enter your password",
+                        prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -253,11 +325,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onFieldSubmitted: (_) =>
                           _confirmPasswordFocus.requestFocus(),
                     ),
+
+                    // Confirm Password
                     TextFormField(
                       focusNode: _confirmPasswordFocus,
                       decoration: InputDecoration(
                         labelText: "Confirm Password",
                         hintText: "Please confirm your password",
+                        prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
@@ -282,25 +357,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) {
-                        // Unfocus to close keyboard and trigger form submission
                         _confirmPasswordFocus.unfocus();
                       },
                     ),
-                    FilledButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () async {
-                              // Validate and save form
-                              final form = _formKey.currentState;
-                              if (form == null || !form.validate()) {
-                                return;
-                              }
-                              form.save();
 
-                              
-                              
-                            },
-                      child: _isLoading
+                    // Error Message
+                    if (authController.errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                authController.errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Sign Up Button
+                    FilledButton(
+                      onPressed: authController.isLoading
+                          ? null
+                          : () => _handleSignUp(authController),
+                      child: authController.isLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -314,17 +403,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                 ),
               ),
+
+              // Footer
               Column(
                 spacing: 16,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  DividerWithText(text: "Or Sign Up with"),
-                  
+                  const DividerWithText(text: "Or Sign Up with"),
                   AccountPromptRow(
                     promptText: "Already have an account?",
                     actionText: "Log in",
-                    onActionPressed: () { Navigator.pop(context);
+                    onActionPressed: () {
+                      Navigator.pop(context);
                     },
                   ),
                 ],
