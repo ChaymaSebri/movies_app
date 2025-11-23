@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/movie_service.dart';
 import '../../services/playlist_service.dart';
 import '../models/movie_model.dart';
+import 'movie_detail_screen.dart';
 
 class MoviesListScreen extends StatefulWidget {
   final String currentUserId;
@@ -20,16 +21,19 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   late TabController _tabController;
   String _searchQuery = "";
 
-  final List<Tab> _tabs = const [
-    Tab(text: "Popular"),
-    Tab(text: "Top Rated"),
-    Tab(text: "Upcoming"),
-  ];
+  late final Future<List<Movie>> _popularFuture;
+  late final Future<List<Movie>> _topRatedFuture;
+  late final Future<List<Movie>> _upcomingFuture;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+
+    // Load once
+    _popularFuture = _movieService.getPopularMovies();
+    _topRatedFuture = _movieService.getTopRatedMovies();
+    _upcomingFuture = _movieService.getUpcomingMovies();
   }
 
   @override
@@ -47,18 +51,17 @@ class _MoviesListScreenState extends State<MoviesListScreen>
         elevation: 0,
         title: const Text(
           "MOVIES",
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.purple, fontSize: 26, fontWeight: FontWeight.bold),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: CircleAvatar(
-              backgroundImage: NetworkImage(
-                "https://via.placeholder.com/150",
+              radius: 22,
+              backgroundColor: Colors.purple.withOpacity(0.2),
+              child: const CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage("https://picsum.photos/200"),
               ),
             ),
           ),
@@ -82,23 +85,20 @@ class _MoviesListScreenState extends State<MoviesListScreen>
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
+                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                 ),
               ),
               TabBar(
                 controller: _tabController,
-                tabs: _tabs,
-                labelColor: Colors.white,
+                tabs: const [
+                  Tab(text: "Popular"),
+                  Tab(text: "Top Rated"),
+                  Tab(text: "Upcoming"),
+                ],
+                labelColor: Colors.purple,
                 unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.red,
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                indicator: const UnderlineTabIndicator(
-                  borderSide: BorderSide(color: Colors.red, width: 4),
-                  insets: EdgeInsets.symmetric(horizontal: 40),
-                ),
+                indicatorColor: Colors.purple,
+                indicatorWeight: 4,
               ),
             ],
           ),
@@ -107,14 +107,14 @@ class _MoviesListScreenState extends State<MoviesListScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildMovieFutureGrid(_movieService.getPopularMovies()),
-          _buildMovieFutureGrid(_movieService.getTopRatedMovies()),
-          _buildMovieFutureGrid(_movieService.getUpcomingMovies()),
+          _buildMovieGrid(_popularFuture),
+          _buildMovieGrid(_topRatedFuture),
+          _buildMovieGrid(_upcomingFuture),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFF1E1E1E),
-        selectedItemColor: Colors.red,
+        selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
         items: const [
@@ -126,62 +126,57 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     );
   }
 
-  Widget _buildMovieFutureGrid(Future<List<Movie>> movieFuture) {
+  Widget _buildMovieGrid(Future<List<Movie>> future) {
     return FutureBuilder<List<Movie>>(
-      future: movieFuture,
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.red),
-          );
+          return const Center(child: CircularProgressIndicator(color: Colors.purple));
         }
-
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text("No movies found", style: TextStyle(color: Colors.white)),
-          );
+          return const Center(child: Text("Aucun film", style: TextStyle(color: Colors.white70)));
         }
 
-        final movies = snapshot.data!;
-        final filtered = _searchQuery.isEmpty
-            ? movies
-            : movies
-            .where((m) => m.title.toLowerCase().contains(_searchQuery.toLowerCase()))
-            .toList();
+        var movies = snapshot.data!;
+        if (_searchQuery.isNotEmpty) {
+          final query = _searchQuery;
+          movies = movies.where((m) => m.title.toLowerCase().contains(query)).toList();
+        }
 
         return GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 0.56,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
           ),
-          itemCount: filtered.length,
-          itemBuilder: (context, index) {
-            return MovieGridCard(
-              movie: filtered[index],
-              currentUserId: widget.currentUserId,
-              playlistService: _playlistService,
-            );
-          },
+          itemCount: movies.length,
+          itemBuilder: (context, i) => MovieGridCard(
+            movie: movies[i],
+            currentUserId: widget.currentUserId,
+            playlistService: _playlistService,
+            movieService: _movieService, // Shared instance
+          ),
         );
       },
     );
   }
 }
 
-// Make sure MovieGridCard is **outside** of the State class
+// ======================== MOVIE GRID CARD (OPTIMIZED) ========================
 class MovieGridCard extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
   final PlaylistService playlistService;
+  final MovieService movieService;
 
   const MovieGridCard({
     Key? key,
     required this.movie,
     required this.currentUserId,
     required this.playlistService,
+    required this.movieService,
   }) : super(key: key);
 
   @override
@@ -190,96 +185,164 @@ class MovieGridCard extends StatefulWidget {
 
 class _MovieGridCardState extends State<MovieGridCard> {
   bool isFavorite = false;
+  bool isHovered = false;
+  bool isLoadingFavorite = false;
 
   @override
   void initState() {
     super.initState();
-    _checkIfFavorite();
+    _checkFavorite();
   }
 
-  Future<void> _checkIfFavorite() async {
-    final fav = await widget.playlistService.isFavorite(widget.currentUserId, widget.movie.id);
-    if (mounted) setState(() => isFavorite = fav);
+  Future<void> _checkFavorite() async {
+    try {
+      final fav = await widget.playlistService.isFavorite(widget.currentUserId, widget.movie.id);
+      if (mounted) setState(() => isFavorite = fav);
+    } catch (_) {}
   }
 
   void _toggleFavorite() async {
-    if (isFavorite) {
-      await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
-    } else {
-      await widget.playlistService.addFavorite(widget.currentUserId, widget.movie.id);
+    setState(() => isLoadingFavorite = true);
+    try {
+      if (isFavorite) {
+        await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
+      } else {
+        await widget.playlistService.addFavorite(widget.currentUserId, widget.movie.id);
+      }
+      if (mounted) setState(() => isFavorite = !isFavorite);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Erreur lors de la modification des favoris"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoadingFavorite = false);
     }
-    setState(() => isFavorite = !isFavorite);
   }
+
+  String get posterUrl => widget.movie.posterUrl.isNotEmpty
+      ? widget.movie.posterUrl
+      : "https://picsum.photos/500/750?random=${widget.movie.id}";
 
   @override
   Widget build(BuildContext context) {
     final year = widget.movie.releaseDate?.year.toString() ?? "N/A";
     final rating = widget.movie.rating?.toStringAsFixed(1) ?? "N/A";
 
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            final fullMovie = await widget.movieService.getMovieDetails(widget.movie.id);
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MovieDetailScreen(
+                  movie: fullMovie,
+                  currentUserId: widget.currentUserId,
+                  playlistService: widget.playlistService,
+                ),
+              ),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Erreur détails : $e")),
+            );
+          }
+        },
+        child: Stack(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                widget.movie.posterUrl.isNotEmpty
-                    ? widget.movie.posterUrl
-                    : "https://via.placeholder.com/500x750?text=No+Image",
-                height: 260,
-                width: double.infinity,
-                fit: BoxFit.cover,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedScale(
+                  scale: isHovered ? 1.06 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      posterUrl,
+                      height: 260,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) => progress == null
+                          ? child
+                          : Container(
+                        color: Colors.grey[800],
+                        height: 260,
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
+                        ),
+                      ),
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 260,
+                        color: Colors.grey[850],
+                        child: const Icon(Icons.broken_image, color: Colors.grey, size: 60),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  widget.movie.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isHovered ? Colors.purple : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            ),
+            // Rating badge
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                    const SizedBox(width: 4),
+                    Text(rating, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.movie.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              year,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            // Favorite button
+            Positioned(
+              bottom: 80,
+              right: 8,
+              child: IconButton(
+                iconSize: 32,
+                icon: isLoadingFavorite
+                    ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
+                )
+                    : Icon(
+                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFavorite ? Colors.purple : Colors.white,
+                  shadows: const [Shadow(blurRadius: 12, color: Colors.black54)],
+                ),
+                onPressed: isLoadingFavorite ? null : _toggleFavorite,
+              ),
             ),
           ],
         ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  rating,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 50,
-          right: 8,
-          child: IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : Colors.white,
-              shadows: const [Shadow(blurRadius: 10, color: Colors.black)],
-            ),
-            onPressed: _toggleFavorite,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

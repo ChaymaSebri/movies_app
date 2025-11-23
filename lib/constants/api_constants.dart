@@ -8,7 +8,7 @@ class ApiConstants {
   // Endpoints
   static const String searchMovies = "/search/movie";
   static const String popularMovies = "/movie/popular";
-  static const String topRatedMovies = "/movie/top_rated";     // ← ADD THIS
+  static const String topRatedMovies = "/movie/top_rated";
   static const String upcomingMovies = "/movie/upcoming";
-  static const String movieDetails = "/movie"; // append /{movie_id}
+  static const String movieDetails = "/movie";
 }

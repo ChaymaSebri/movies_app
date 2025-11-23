@@ -1,4 +1,4 @@
-// movie_model.dart
+// models/movie_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Movie {
@@ -6,25 +6,28 @@ class Movie {
   final String title;
   final String description;
   final String posterUrl;
-  final String genre;
-  final DateTime? releaseDate; // optional
-  final double? rating;        // optional
-  final String source;         // "api" or "manual"
-  final String? addedBy;       // admin userId or null
+  final String? backdropUrl;        // ← NOUVEAU : fond du détail
+  final List<String> genres;
+  final DateTime? releaseDate;
+  final double? rating;
+  final int? runtime;               // ← durée en minutes
+  final String source;
+  final String? addedBy;
 
   Movie({
     required this.id,
     required this.title,
     required this.description,
     required this.posterUrl,
-    this.genre = '',
+    this.backdropUrl,
+    this.genres = const [],
     this.releaseDate,
     this.rating,
+    this.runtime,
     this.source = 'manual',
     this.addedBy,
   });
 
-  /// Create Movie from Firestore DocumentSnapshot
   factory Movie.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return Movie(
@@ -32,107 +35,59 @@ class Movie {
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       posterUrl: data['posterUrl'] ?? '',
-      genre: data['genre'] ?? '',
+      backdropUrl: data['backdropUrl'],
+      genres: List<String>.from(data['genres'] ?? []),
       releaseDate: _parseTimestampOrStringToDateTime(data['releaseDate']),
       rating: _toDouble(data['rating']),
+      runtime: data['runtime'] as int?,
       source: data['source'] ?? 'manual',
       addedBy: data['addedBy'],
     );
   }
 
-  /// Create Movie from a plain map (e.g. when you build locally or from API JSON)
-  factory Movie.fromMap(String id, Map<String, dynamic> data) {
-    return Movie(
-      id: id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      posterUrl: data['posterUrl'] ?? '',
-      genre: data['genre'] ?? '',
-      releaseDate: _parseTimestampOrStringToDateTime(data['releaseDate']),
-      rating: _toDouble(data['rating']),
-      source: data['source'] ?? 'manual',
-      addedBy: data['addedBy'],
-    );
-  }
-
-  /// Create Movie from API JSON (example: RapidAPI response). Keep tolerant to missing fields.
   factory Movie.fromJson(Map<String, dynamic> json) {
-    // Map fields according to the API structure — adapt names if API differs.
     return Movie(
-      id: json['id']?.toString() ?? '', // API id (string/int)
+      id: json['id']?.toString() ?? '',
       title: json['title'] ?? json['name'] ?? '',
-      description: json['overview'] ?? json['description'] ?? '',
+      description: json['overview'] ?? '',
       posterUrl: json['poster_path'] != null
-          ? _buildPosterUrlFromPath(json['poster_path'])
-          : (json['posterUrl'] ?? ''),
-      genre: (json['genre'] is String) ? json['genre'] : (json['genres'] is List && json['genres'].isNotEmpty ? json['genres'][0].toString() : ''),
-      releaseDate: _parseStringToDateTime(json['release_date'] ?? json['first_air_date']),
-      rating: _toDouble(json['vote_average'] ?? json['rating']),
+          ? 'https://image.tmdb.org/t/p/w500${json['poster_path']}'
+          : '',
+      backdropUrl: json['backdrop_path'] != null
+          ? 'https://image.tmdb.org/t/p/w1280${json['backdrop_path']}'
+          : null,
+      genres: (json['genres'] as List<dynamic>?)
+          ?.map((g) => g['name'] as String)
+          .toList() ??
+          [],
+      releaseDate: _parseStringToDateTime(json['release_date']),
+      rating: _toDouble(json['vote_average']),
+      runtime: json['runtime'] as int?,
       source: 'api',
-      addedBy: null,
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'title': title,
-      'description': description,
-      'posterUrl': posterUrl,
-      'genre': genre,
-      // Store releaseDate as ISO string or Firestore Timestamp from your service.
-      'releaseDate': releaseDate?.toIso8601String(),
-      'rating': rating,
-      'source': source,
-      'addedBy': addedBy,
-    };
-  }
-
-  /// Useful when writing to Firestore with an actual Timestamp
   Map<String, dynamic> toFirestoreMap() {
     return {
       'title': title,
       'description': description,
       'posterUrl': posterUrl,
-      'genre': genre,
+      'backdropUrl': backdropUrl,
+      'genres': genres,
       'releaseDate': releaseDate != null ? Timestamp.fromDate(releaseDate!) : null,
       'rating': rating,
+      'runtime': runtime,
       'source': source,
       'addedBy': addedBy,
-    }..removeWhere((k, v) => v == null); // remove nulls
+    }..removeWhere((k, v) => v == null);
   }
 
-  // ----- helpers -----
-  static double? _toDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value);
-    }
+  // Helpers (inchangés)
+  static double? _toDouble(dynamic v) => v is num ? v.toDouble() : null;
+  static DateTime? _parseTimestampOrStringToDateTime(dynamic v) {
+    if (v is Timestamp) return v.toDate();
+    if (v is String) return DateTime.tryParse(v);
     return null;
   }
-
-  static DateTime? _parseTimestampOrStringToDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is Timestamp) return value.toDate();
-    if (value is DateTime) return value;
-    if (value is String) return _parseStringToDateTime(value);
-    return null;
-  }
-
-  static DateTime? _parseStringToDateTime(String? s) {
-    if (s == null || s.isEmpty) return null;
-    try {
-      return DateTime.parse(s);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  static String _buildPosterUrlFromPath(String path) {
-    // If you use TMDB you typically need to prepend a base URL.
-    // Replace this with your own base if different.
-    if (path.startsWith('http')) return path;
-    return 'https://image.tmdb.org/t/p/w500$path';
-  }
+  static DateTime? _parseStringToDateTime(String? s) => s == null ? null : DateTime.tryParse(s);
 }
