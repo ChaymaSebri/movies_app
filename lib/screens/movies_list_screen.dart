@@ -4,6 +4,7 @@ import '../../services/movie_service.dart';
 import '../../services/playlist_service.dart';
 import '../models/movie_model.dart';
 import 'movie_detail_screen.dart';
+import 'favorites_screen.dart';
 
 class MoviesListScreen extends StatefulWidget {
   final String currentUserId;
@@ -20,6 +21,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
 
   late TabController _tabController;
   String _searchQuery = "";
+  int _selectedIndex = 0;
 
   late final Future<List<Movie>> _popularFuture;
   late final Future<List<Movie>> _topRatedFuture;
@@ -30,7 +32,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    // Load once
+    // Load movies once
     _popularFuture = _movieService.getPopularMovies();
     _topRatedFuture = _movieService.getTopRatedMovies();
     _upcomingFuture = _movieService.getUpcomingMovies();
@@ -116,9 +118,19 @@ class _MoviesListScreenState extends State<MoviesListScreen>
         backgroundColor: const Color(0xFF1E1E1E),
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
-        currentIndex: 0,
+        currentIndex: 0, // Toujours 0 → pas de persistance
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FavoritesScreen(currentUserId: widget.currentUserId),
+              ),
+            );
+          }
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: "Discover"),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
           BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favoris"),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
         ],
@@ -156,7 +168,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
             movie: movies[i],
             currentUserId: widget.currentUserId,
             playlistService: _playlistService,
-            movieService: _movieService, // Shared instance
+            movieService: _movieService,
           ),
         );
       },
@@ -215,7 +227,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Erreur lors de la modification des favoris"),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.purple,
           ),
         );
       }

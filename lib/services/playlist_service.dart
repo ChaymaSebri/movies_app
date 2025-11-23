@@ -2,6 +2,8 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/favorite_model.dart';
+import '../models/movie_model.dart';
+import 'movie_service.dart';
 
 class PlaylistService {
   final CollectionReference _favoritesRef =
@@ -86,4 +88,26 @@ class PlaylistService {
 
     return query.docs.map((doc) => doc['movieId'] as String).toList();
   }
+  // ------------------------
+  // New: Get full Movie objects for a user
+  // ------------------------
+  Future<List<Movie>> getFavoriteMovies(String userId) async {
+    final movieIds = await getFavoriteMovieIds(userId);
+    List<Movie> movies = [];
+
+    final movieService = MovieService(); // instance of your service
+
+    for (final id in movieIds) {
+      try {
+        final movie = await movieService.getMovieDetails(id);
+        movies.add(movie);
+      } catch (_) {
+        // ignore errors for missing movies
+      }
+    }
+
+    return movies;
+  }
+
+
 }

@@ -5,15 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="acbc5754-b44f-4462-a80c-db3d170b3496" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/constants/api_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/api_constants.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/movie_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/movie_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/api_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/movie_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/movie_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/playlist_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/playlist_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

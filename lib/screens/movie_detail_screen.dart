@@ -7,12 +7,14 @@ class MovieDetailScreen extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
   final PlaylistService playlistService;
+  final VoidCallback? onFavoriteChanged; // NOUVEAU : pour rafraîchir la page Favoris
 
   const MovieDetailScreen({
     Key? key,
     required this.movie,
     required this.currentUserId,
     required this.playlistService,
+    this.onFavoriteChanged, // optionnel
   }) : super(key: key);
 
   @override
@@ -48,14 +50,32 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   void _toggleFavorite() async {
     setState(() => isLoadingFavorite = true);
-
     try {
       if (isFavorite) {
         await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
       } else {
         await widget.playlistService.addFavorite(widget.currentUserId, widget.movie.id);
       }
-      if (mounted) setState(() => isFavorite = !isFavorite);
+
+      if (mounted) {
+        setState(() => isFavorite = !isFavorite);
+      }
+
+      // LIGNE MAGIQUE : rafraîchit la page Favoris quand tu changes le statut
+      widget.onFavoriteChanged?.call();
+
+      // SnackBar de confirmation
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isFavorite
+                ? "Ajouté aux favoris !"
+                : "Retiré des favoris"),
+            backgroundColor: isFavorite ? Colors.purple[700] : Colors.grey[800],
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -70,12 +90,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final movie = widget.movie;
-
-    // URLs avec fallback infaillible
     final String backdropUrl = movie.backdropUrl?.isNotEmpty == true
         ? movie.backdropUrl!
         : movie.posterUrl.replaceAll('w500', 'original');
-
     final String finalBackdrop = backdropUrl.isNotEmpty
         ? backdropUrl
         : "https://picsum.photos/1280/720?blur=2";
@@ -152,7 +169,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       Text(duration, style: const TextStyle(color: Colors.grey, fontSize: 16)),
                     ],
                   ),
-
                   const SizedBox(height: 20),
 
                   // Genres
