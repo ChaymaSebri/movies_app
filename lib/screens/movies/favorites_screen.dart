@@ -1,8 +1,8 @@
 // screens/favorites_screen.dart
 import 'package:flutter/material.dart';
-import '../../services/playlist_service.dart';
-import '../../services/movie_service.dart';
-import '../models/movie_model.dart';
+import '../../../services/playlist_service.dart';
+import '../../../services/movie_service.dart';
+import '../../models/movie_model.dart';
 import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {

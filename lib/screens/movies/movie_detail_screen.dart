@@ -1,7 +1,7 @@
 // screens/movie_detail_screen.dart
 import 'package:flutter/material.dart';
-import '../../models/movie_model.dart';
-import '../../services/playlist_service.dart';
+import '../../../models/movie_model.dart';
+import '../../../services/playlist_service.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final Movie movie;

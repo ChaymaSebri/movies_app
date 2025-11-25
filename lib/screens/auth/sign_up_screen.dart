@@ -1,16 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:movies_app/core/constants/app_routes.dart';
-import 'package:movies_app/core/utils/image_picker_helper.dart';
-import 'package:movies_app/features/auth/controllers/auth_controller.dart';
-import 'package:movies_app/core/utils/validators/age_validator.dart';
-import 'package:movies_app/core/utils/validators/email_validator.dart';
-import 'package:movies_app/core/utils/validators/name_validator.dart';
-import 'package:movies_app/core/utils/validators/password_validator.dart';
-import '../widgets/account_prompt_row.dart';
-import '../widgets/divider_with_text.dart';
+import 'package:movies_app/constants/app_routes.dart';
+import 'package:movies_app/services/auth_service.dart';
+import 'package:movies_app/services/user_service.dart';
+import 'package:movies_app/services/cloudinary_service.dart';
+import 'package:movies_app/models/user_model.dart';
+import 'package:movies_app/utils/image_picker_helper.dart';
+import 'package:movies_app/utils/validators/age_validator.dart';
+import 'package:movies_app/utils/validators/email_validator.dart';
+import 'package:movies_app/utils/validators/name_validator.dart';
+import 'package:movies_app/utils/validators/password_validator.dart';
+import '../../widgets/account_prompt_row.dart';
+import '../../widgets/divider_with_text.dart';
 
 class SignUpScreen extends StatefulWidget {
   static String routeName = '/sign-up';
@@ -23,9 +25,14 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
   
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
   
   File? _selectedProfilePicture;
 
@@ -79,7 +86,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
- Future<void> _handleSignUp(AuthController authController) async {
+  Future<void> _handleSignUp() async {
     // Validate form
     final form = _formKey.currentState;
     if (form == null || !form.validate()) {
@@ -87,34 +94,71 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
     form.save();
 
-    // Attempt sign up
-    final success = await authController.signUp(
-      nom: lastName,
-      prenom: firstName,
-      age: age,
-      email: email,
-      password: password,
-      profilePicture: _selectedProfilePicture,
-    );
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    if (success && mounted) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      // 1. Create Firebase Auth account
+      final credential = await _authService.signUp(
+        email: email,
+        password: password,
       );
 
-      // Navigate to profile or home
-      Navigator.pushReplacementNamed(context, AppRoutes.profile);
+      final userId = credential.user!.uid;
+
+      // 2. Upload profile picture to Cloudinary (if provided)
+      String? photoUrl;
+      if (_selectedProfilePicture != null) {
+        photoUrl = await _cloudinaryService.uploadProfilePicture(
+          userId: userId,
+          imageFile: _selectedProfilePicture!,
+        );
+      }
+
+      // 3. Create user document in Firestore
+      final user = UserModel(
+        id: userId,
+        nom: lastName,
+        prenom: firstName,
+        age: age,
+        email: email,
+        photoUrl: photoUrl,
+        isActive: true,
+        role: 'user',
+        createdAt: DateTime.now(),
+      );
+
+      await _userService.createUser(user);
+
+      // 4. Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // 5. Navigate to login
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authController = Provider.of<AuthController>(context);
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(),
@@ -132,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: authController.isLoading ? null : _selectProfilePhoto,
+                    onTap: _isLoading ? null : _selectProfilePhoto,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -162,8 +206,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 width: 2,
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
                               child: Icon(
                                 Icons.add_a_photo,
                                 size: 16,
@@ -185,7 +229,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
 
               // Header
-              Column(
+              const Column(
                 children: [
                   Text(
                     "Create an Account",
@@ -362,7 +406,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
 
                     // Error Message
-                    if (authController.errorMessage != null)
+                    if (_errorMessage != null)
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -376,7 +420,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                authController.errorMessage!,
+                                _errorMessage!,
                                 style: const TextStyle(color: Colors.red),
                               ),
                             ),
@@ -386,10 +430,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                     // Sign Up Button
                     FilledButton(
-                      onPressed: authController.isLoading
-                          ? null
-                          : () => _handleSignUp(authController),
-                      child: authController.isLoading
+                      onPressed: _isLoading ? null : _handleSignUp,
+                      child: _isLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,

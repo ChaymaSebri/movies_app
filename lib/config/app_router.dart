@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:movies_app/core/constants/app_routes.dart';
-import 'package:movies_app/features/auth/views/screens/login_screen.dart';
-import 'package:movies_app/features/auth/views/screens/sign_up_screen.dart';
-import 'package:movies_app/features/profile/views/screens/profile_screen.dart';
-// import 'package:movies_app/features/profile/views/screens/edit_profile_screen.dart';
+import 'package:movies_app/constants/app_routes.dart';
+
+import 'package:movies_app/screens/auth/login_screen.dart';
+import 'package:movies_app/screens/auth/sign_up_screen.dart';
+import 'package:movies_app/screens/auth/profile_screen.dart';
+// import 'package:movies_app/screens/auth/edit_profile_screen.dart';
+
+import 'package:movies_app/screens/movies/movies_list_screen.dart';
+import 'package:movies_app/screens/movies/movie_detail_screen.dart';
+import 'package:movies_app/screens/movies/favorites_screen.dart';
 
 class AppRouter {
   static Map<String, WidgetBuilder> get routes {
@@ -12,7 +17,10 @@ class AppRouter {
       AppRoutes.signUp: (context) => const SignUpScreen(),
       AppRoutes.profile: (context) => const ProfileScreen(),
       // AppRoutes.editProfile: (context) => const EditProfileScreen(),
-      // Ajouter les autres routes ici
+
+      // AppRoutes.moviesList: (context) => const MoviesListScreen(),
+      // AppRoutes.movieDetail: (context) => const MovieDetailScreen(),
+      // AppRoutes.favorites: (context) => const FavoritesScreen(),
     };
   }
 }
