@@ -4,8 +4,12 @@ import '../models/movie_model.dart';
 import './api_service.dart';
 
 class MovieService {
-  final CollectionReference _moviesRef =
-  FirebaseFirestore.instance.collection('movies');
+  // Singleton pattern
+  static final MovieService _instance = MovieService._internal();
+  factory MovieService() => _instance;
+  MovieService._internal();
+
+  final CollectionReference _moviesRef = FirebaseFirestore.instance.collection('movies');
   final ApiService _apiService = ApiService();
 
   // ====================== CACHE DES LISTES ======================

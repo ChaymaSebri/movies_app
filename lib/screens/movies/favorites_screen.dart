@@ -1,37 +1,86 @@
-// screens/favorites_screen.dart
 import 'package:flutter/material.dart';
 import '../../../services/playlist_service.dart';
 import '../../../services/movie_service.dart';
+import '../../../services/auth_service.dart';
 import '../../models/movie_model.dart';
+import '../../../constants/app_routes.dart';
 import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  final String currentUserId;
-  const FavoritesScreen({Key? key, required this.currentUserId}) : super(key: key);
+  const FavoritesScreen({Key? key}) : super(key: key);
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
+  final AuthService _authService = AuthService();
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
+  
   late Future<List<Movie>> _favoritesFuture;
+  String? _currentUserId;
+  bool _isLoadingUser = true;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    // Get current user ID from Firebase Auth
+    final userId = _authService.currentUser?.uid;
+
+    if (userId == null) {
+      // User not logged in, redirect to login
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
+      return;
+    }
+
+    setState(() {
+      _currentUserId = userId;
+      _isLoadingUser = false;
+    });
+    
     _loadFavorites();
   }
 
   void _loadFavorites() {
-    _favoritesFuture = _playlistService.getFavoriteMovies(widget.currentUserId);
+    if (_currentUserId != null) {
+      _favoritesFuture = _playlistService.getFavoriteMovies(_currentUserId!);
+    }
   }
 
   void _refresh() => setState(_loadFavorites);
 
   @override
   Widget build(BuildContext context) {
+    // Show loading while checking user
+    if (_isLoadingUser) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.purple),
+        ),
+      );
+    }
+
+    // User not logged in (should not happen due to redirect)
+    if (_currentUserId == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(
+          child: Text(
+            "Erreur d'authentification",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -73,11 +122,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final movie = favorites[index];
               return FavoriteMovieCard(
                 movie: movie,
-                currentUserId: widget.currentUserId,
+                currentUserId: _currentUserId!,
                 playlistService: _playlistService,
                 movieService: _movieService,
                 onRemoved: _refresh,
-                onFavoriteChanged: _refresh, // <-- CLÉ MAGIQUE
+                onFavoriteChanged: _refresh,
               );
             },
           );
@@ -124,7 +173,7 @@ class FavoriteMovieCard extends StatefulWidget {
   final PlaylistService playlistService;
   final MovieService movieService;
   final VoidCallback onRemoved;
-  final VoidCallback onFavoriteChanged; // <-- NOUVEAU
+  final VoidCallback onFavoriteChanged;
 
   const FavoriteMovieCard({
     Key? key,
@@ -150,7 +199,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
   void _removeFromFavorites() async {
     await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
     widget.onRemoved();
-    widget.onFavoriteChanged(); // <-- Rafraîchit la liste
+    widget.onFavoriteChanged();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -171,27 +220,15 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
       onExit: (_) => setState(() => isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () async {
-          try {
-            final fullMovie = await widget.movieService.getMovieDetails(widget.movie.id);
-            if (!mounted) return;
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MovieDetailScreen(
-                  movie: fullMovie,
-                  currentUserId: widget.currentUserId,
-                  playlistService: widget.playlistService,
-                  onFavoriteChanged: widget.onFavoriteChanged,
-                ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MovieDetailScreen(
+                movieId: widget.movie.id,
               ),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Erreur : $e")),
-            );
-          }
+            ),
+          );
         },
         child: Stack(
           children: [

@@ -6,8 +6,12 @@ import '../models/movie_model.dart';
 import 'movie_service.dart';
 
 class PlaylistService {
-  final CollectionReference _favoritesRef =
-  FirebaseFirestore.instance.collection('favorites');
+  // Singleton pattern
+  static final PlaylistService _instance = PlaylistService._internal();
+  factory PlaylistService() => _instance;
+  PlaylistService._internal();
+
+  final CollectionReference _favoritesRef = FirebaseFirestore.instance.collection('favorites');
 
   // -----------------------------------------------------------
   // 1. ADD FAVORITE

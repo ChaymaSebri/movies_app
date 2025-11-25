@@ -18,9 +18,9 @@ class AppRouter {
       AppRoutes.profile: (context) => const ProfileScreen(),
       // AppRoutes.editProfile: (context) => const EditProfileScreen(),
 
-      // AppRoutes.moviesList: (context) => const MoviesListScreen(),
-      // AppRoutes.movieDetail: (context) => const MovieDetailScreen(),
-      // AppRoutes.favorites: (context) => const FavoritesScreen(),
+      AppRoutes.moviesList: (context) => const MoviesListScreen(),
+      AppRoutes.movieDetail: (context) => const MovieDetailScreen(),
+      AppRoutes.favorites: (context) => const FavoritesScreen(),
     };
   }
 }

@@ -1,20 +1,20 @@
-// screens/movie_detail_screen.dart
+// movie_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../../../models/movie_model.dart';
 import '../../../services/playlist_service.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/movie_service.dart';
+import '../../../constants/app_routes.dart';
 
 class MovieDetailScreen extends StatefulWidget {
-  final Movie movie;
-  final String currentUserId;
-  final PlaylistService playlistService;
-  final VoidCallback? onFavoriteChanged; // NOUVEAU : pour rafraîchir la page Favoris
+  // Only accept movieId - simpler and cleaner
+  final String? movieId;
+  final VoidCallback? onFavoriteChanged;
 
   const MovieDetailScreen({
     Key? key,
-    required this.movie,
-    required this.currentUserId,
-    required this.playlistService,
-    this.onFavoriteChanged, // optionnel
+    this.movieId,
+    this.onFavoriteChanged,
   }) : super(key: key);
 
   @override
@@ -22,20 +22,91 @@ class MovieDetailScreen extends StatefulWidget {
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
+  // Use singleton instances
+  final _authService = AuthService();
+  final _playlistService = PlaylistService();
+  final _movieService = MovieService();
+
   bool isFavorite = false;
   bool isLoadingFavorite = true;
+  String? _currentUserId;
+  bool _isLoadingUser = true;
+  Movie? _movie;
+  bool _isLoadingMovie = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _checkFavorite();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _loadCurrentUser();
+    if (_currentUserId != null) {
+      await _loadMovieDetails();
+      if (_movie != null) {
+        await _checkFavorite();
+      }
+    }
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final userId = _authService.currentUser?.uid;
+
+    if (userId == null) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _currentUserId = userId;
+        _isLoadingUser = false;
+      });
+    }
+  }
+
+  Future<void> _loadMovieDetails() async {
+    // Get movieId from widget or route arguments
+    final movieId = widget.movieId ?? 
+        (ModalRoute.of(context)?.settings.arguments as Map?)?['movieId'] as String?;
+
+    if (movieId == null) {
+      setState(() {
+        _errorMessage = "Aucun ID de film fourni";
+        _isLoadingMovie = false;
+      });
+      return;
+    }
+
+    try {
+      final movie = await _movieService.getMovieDetails(movieId);
+      if (mounted) {
+        setState(() {
+          _movie = movie;
+          _isLoadingMovie = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Erreur lors du chargement du film";
+          _isLoadingMovie = false;
+        });
+      }
+    }
   }
 
   Future<void> _checkFavorite() async {
+    if (_currentUserId == null || _movie == null) return;
+
     try {
-      final fav = await widget.playlistService.isFavorite(
-        widget.currentUserId,
-        widget.movie.id,
+      final fav = await _playlistService.isFavorite(
+        _currentUserId!,
+        _movie!.id,
       );
       if (mounted) {
         setState(() {
@@ -49,22 +120,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   void _toggleFavorite() async {
+    if (_currentUserId == null || _movie == null) return;
+
     setState(() => isLoadingFavorite = true);
     try {
       if (isFavorite) {
-        await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
+        await _playlistService.removeFavorite(_currentUserId!, _movie!.id);
       } else {
-        await widget.playlistService.addFavorite(widget.currentUserId, widget.movie.id);
+        await _playlistService.addFavorite(_currentUserId!, _movie!.id);
       }
 
       if (mounted) {
         setState(() => isFavorite = !isFavorite);
       }
 
-      // LIGNE MAGIQUE : rafraîchit la page Favoris quand tu changes le statut
       widget.onFavoriteChanged?.call();
 
-      // SnackBar de confirmation
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -89,7 +160,51 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final movie = widget.movie;
+    // Show loading while checking user or loading movie
+    if (_isLoadingUser || _isLoadingMovie) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.purple),
+        ),
+      );
+    }
+
+    // User not logged in (should not happen due to redirect)
+    if (_currentUserId == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(
+            "Erreur d'authentification",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    // Error loading movie or movie not found
+    if (_movie == null || _errorMessage != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            _errorMessage ?? "Film introuvable",
+            style: const TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        ),
+      );
+    }
+
+    final movie = _movie!;
     final String backdropUrl = movie.backdropUrl?.isNotEmpty == true
         ? movie.backdropUrl!
         : movie.posterUrl.replaceAll('w500', 'original');
