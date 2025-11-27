@@ -1,4 +1,4 @@
-// screens/movies_list_screen.dart
+// lib/screens/movies_list_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/movie_service.dart';
 import '../../services/playlist_service.dart';
@@ -14,28 +14,19 @@ class MoviesListScreen extends StatefulWidget {
   State<MoviesListScreen> createState() => _MoviesListScreenState();
 }
 
-class _MoviesListScreenState extends State<MoviesListScreen>
-    with SingleTickerProviderStateMixin {
+class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerProviderStateMixin {
   final MovieService _movieService = MovieService();
   final PlaylistService _playlistService = PlaylistService();
 
   late TabController _tabController;
   String _searchQuery = "";
-  int _selectedIndex = 0;
 
-  late final Future<List<Movie>> _popularFuture;
-  late final Future<List<Movie>> _topRatedFuture;
-  late final Future<List<Movie>> _upcomingFuture;
+  final List<String> _categories = ['Popular', 'Top Rated', 'Upcoming'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-
-    // Load movies once
-    _popularFuture = _movieService.getPopularMovies();
-    _topRatedFuture = _movieService.getTopRatedMovies();
-    _upcomingFuture = _movieService.getUpcomingMovies();
   }
 
   @override
@@ -61,10 +52,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
             child: CircleAvatar(
               radius: 22,
               backgroundColor: Colors.purple.withOpacity(0.2),
-              child: const CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage("https://picsum.photos/200"),
-              ),
+              child: const CircleAvatar(radius: 20, backgroundImage: NetworkImage("https://picsum.photos/200")),
             ),
           ),
         ],
@@ -82,10 +70,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
                     filled: true,
                     fillColor: const Color(0xFF1E1E1E),
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                 ),
@@ -108,24 +93,18 @@ class _MoviesListScreenState extends State<MoviesListScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildMovieGrid(_popularFuture),
-          _buildMovieGrid(_topRatedFuture),
-          _buildMovieGrid(_upcomingFuture),
-        ],
+        children: _categories.map((category) => _buildMovieGrid(category)).toList(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFF1E1E1E),
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
-        currentIndex: 0, // Toujours 0 → pas de persistance
+        currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => FavoritesScreen(currentUserId: widget.currentUserId),
-              ),
+              MaterialPageRoute(builder: (_) => FavoritesScreen(currentUserId: widget.currentUserId)),
             );
           }
         },
@@ -138,9 +117,9 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     );
   }
 
-  Widget _buildMovieGrid(Future<List<Movie>> future) {
-    return FutureBuilder<List<Movie>>(
-      future: future,
+  Widget _buildMovieGrid(String category) {
+    return StreamBuilder<List<Movie>>(
+      stream: _movieService.getMoviesByCategory(category),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Colors.purple));
@@ -151,8 +130,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
 
         var movies = snapshot.data!;
         if (_searchQuery.isNotEmpty) {
-          final query = _searchQuery;
-          movies = movies.where((m) => m.title.toLowerCase().contains(query)).toList();
+          movies = movies.where((m) => m.title.toLowerCase().contains(_searchQuery)).toList();
         }
 
         return GridView.builder(
@@ -176,7 +154,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   }
 }
 
-// ======================== MOVIE GRID CARD (OPTIMIZED) ========================
+// ==================== MOVIE GRID CARD (inchangé, parfait) ====================
 class MovieGridCard extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
@@ -225,10 +203,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erreur lors de la modification des favoris"),
-            backgroundColor: Colors.purple,
-          ),
+          const SnackBar(content: Text("Erreur favoris"), backgroundColor: Colors.purple),
         );
       }
     } finally {
@@ -237,7 +212,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
   }
 
   String get posterUrl => widget.movie.posterUrl.isNotEmpty
-      ? widget.movie.posterUrl
+      ? widget.movie.posterUrl.replaceAll('/upload/', '/upload/w_500,c_limit,q_auto,f_auto/')
       : "https://picsum.photos/500/750?random=${widget.movie.id}";
 
   @override
@@ -248,7 +223,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => isHovered = true),
       onExit: (_) => setState(() => isHovered = false),
-      cursor: SystemMouseCursors.click,
+      cursor: SystemMouseCursors.click, // LE CURSEUR POINTEUR MARCHE MAINTENANT
       child: GestureDetector(
         onTap: () async {
           try {
@@ -265,13 +240,12 @@ class _MovieGridCardState extends State<MovieGridCard> {
               ),
             );
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Erreur détails : $e")),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur : $e")));
           }
         },
         child: Stack(
           children: [
+            // === TOUTE LA CARTE ===
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -287,18 +261,8 @@ class _MovieGridCardState extends State<MovieGridCard> {
                       fit: BoxFit.cover,
                       loadingBuilder: (_, child, progress) => progress == null
                           ? child
-                          : Container(
-                        color: Colors.grey[800],
-                        height: 260,
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
-                        ),
-                      ),
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 260,
-                        color: Colors.grey[850],
-                        child: const Icon(Icons.broken_image, color: Colors.grey, size: 60),
-                      ),
+                          : Container(color: Colors.grey[800], height: 260, child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple))),
+                      errorBuilder: (_, __, ___) => Container(height: 260, color: Colors.grey[850], child: const Icon(Icons.broken_image, color: Colors.grey, size: 60)),
                     ),
                   ),
                 ),
@@ -307,16 +271,13 @@ class _MovieGridCardState extends State<MovieGridCard> {
                   widget.movie.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isHovered ? Colors.purple : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: isHovered ? Colors.purple : Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
-            // Rating badge
+
+            // === BADGE NOTE ===
             Positioned(
               top: 8,
               right: 8,
@@ -332,18 +293,15 @@ class _MovieGridCardState extends State<MovieGridCard> {
                 ),
               ),
             ),
-            // Favorite button
+
+            // === BOUTON FAVORIS (cliquable même au hover) ===
             Positioned(
               bottom: 80,
               right: 8,
               child: IconButton(
                 iconSize: 32,
                 icon: isLoadingFavorite
-                    ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple),
-                )
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple))
                     : Icon(
                   isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                   color: isFavorite ? Colors.purple : Colors.white,

@@ -5,35 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="acbc5754-b44f-4462-a80c-db3d170b3496" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/config/app_router.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/config/app_theme.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/config/cloudinary_config.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/constants/app_colors.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/constants/app_routes.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/auth_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/cloudinary_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/user_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/utils/image_picker_helper.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/auth/controllers/auth_controller.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/auth/models/user_model.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/profile/views/screens/profile_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/screens/admin/add_movie_screen.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/services/cloudinary_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Runner/Info.plist" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Runner/Info.plist" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/age_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/age_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/email_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/email_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/name_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/name_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/password_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/password_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/screens/login_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/screens/sign_up_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/screens/sign_up_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/widgets/account_prompt_row.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/widgets/account_prompt_row.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/widgets/divider_with_text.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/widgets/divider_with_text.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/movie_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/movie_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/movie_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/movie_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/playlist_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/playlist_service.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,7 +48,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "Merging feature-movie",
+    "git-widget-placeholder": "feature-movie",
     "io.flutter.reload.alreadyRun": "true",
     "settings.editor.selected.configurable": "AndroidSdkUpdater",
     "show.migrate.to.gradle.popup": "false"
@@ -117,13 +98,8 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/main.dart</url>
-          <line>41</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/lib/screens/movie_detail_screen.dart</url>
-          <line>284</line>
+          <line>295</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

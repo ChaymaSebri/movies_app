@@ -1,4 +1,4 @@
-// screens/movie_detail_screen.dart
+// lib/screens/movie_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../../models/movie_model.dart';
 import '../../services/playlist_service.dart';
@@ -7,14 +7,14 @@ class MovieDetailScreen extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
   final PlaylistService playlistService;
-  final VoidCallback? onFavoriteChanged; // NOUVEAU : pour rafraîchir la page Favoris
+  final VoidCallback? onFavoriteChanged;
 
   const MovieDetailScreen({
     Key? key,
     required this.movie,
     required this.currentUserId,
     required this.playlistService,
-    this.onFavoriteChanged, // optionnel
+    this.onFavoriteChanged,
   }) : super(key: key);
 
   @override
@@ -57,20 +57,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         await widget.playlistService.addFavorite(widget.currentUserId, widget.movie.id);
       }
 
-      if (mounted) {
-        setState(() => isFavorite = !isFavorite);
-      }
-
-      // LIGNE MAGIQUE : rafraîchit la page Favoris quand tu changes le statut
+      if (mounted) setState(() => isFavorite = !isFavorite);
       widget.onFavoriteChanged?.call();
 
-      // SnackBar de confirmation
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isFavorite
-                ? "Ajouté aux favoris !"
-                : "Retiré des favoris"),
+            content: Text(isFavorite ? "Ajouté aux favoris !" : "Retiré des favoris"),
             backgroundColor: isFavorite ? Colors.purple[700] : Colors.grey[800],
             duration: const Duration(seconds: 2),
           ),
@@ -90,12 +83,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final movie = widget.movie;
-    final String backdropUrl = movie.backdropUrl?.isNotEmpty == true
-        ? movie.backdropUrl!
-        : movie.posterUrl.replaceAll('w500', 'original');
-    final String finalBackdrop = backdropUrl.isNotEmpty
-        ? backdropUrl
-        : "https://picsum.photos/1280/720?blur=2";
+
+    // LOGIQUE BACKDROP PARFAITE (TMDB + CLOUDINARY)
+    String getBackdropUrl() {
+      // 1. Si on a un vrai backdrop → on le prend
+      if (movie.backdropUrl != null && movie.backdropUrl!.isNotEmpty) {
+        return movie.backdropUrl!;
+      }
+
+      // 2. Sinon, on génère un grand poster selon la source
+      final poster = movie.posterUrl;
+
+      if (poster.contains('cloudinary.com')) {
+        // Image Cloudinary → on agrandit + optimisation
+        return poster.replaceAll('/upload/', '/upload/w_1280,c_limit,q_auto,f_auto/');
+      } else if (poster.contains('image.tmdb.org') || poster.contains('themoviedb.org')) {
+        // TMDB → on passe en original
+        return poster.replaceAll(RegExp(r'w\d+'), 'original');
+      } else {
+        // Fallback
+        return poster;
+      }
+    }
+
+    final String finalBackdrop = getBackdropUrl();
 
     final year = movie.releaseDate?.year.toString() ?? "Inconnue";
     final duration = movie.runtime != null ? "${movie.runtime} min" : "Durée inconnue";

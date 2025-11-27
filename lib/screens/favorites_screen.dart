@@ -1,4 +1,4 @@
-// screens/favorites_screen.dart
+// lib/screens/favorites_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/playlist_service.dart';
 import '../../services/movie_service.dart';
@@ -16,19 +16,6 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
-  late Future<List<Movie>> _favoritesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavorites();
-  }
-
-  void _loadFavorites() {
-    _favoritesFuture = _playlistService.getFavoriteMovies(widget.currentUserId);
-  }
-
-  void _refresh() => setState(_loadFavorites);
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +34,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<Movie>>(
-        future: _favoritesFuture,
+      body: StreamBuilder<List<Movie>>(
+        stream: _playlistService.getFavoriteMoviesStream(widget.currentUserId), // CHANGEMENT CLÉ
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.purple));
@@ -76,8 +63,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 currentUserId: widget.currentUserId,
                 playlistService: _playlistService,
                 movieService: _movieService,
-                onRemoved: _refresh,
-                onFavoriteChanged: _refresh, // <-- CLÉ MAGIQUE
+                onRemoved: () => setState(() {}), // Rafraîchit instantanément
+                onFavoriteChanged: () => setState(() {}),
               );
             },
           );
@@ -117,14 +104,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
-// CARTE IDENTIQUE À DISCOVER + CALLBACK POUR RAFRAÎCHIR
+// === CARTE FAVORIS (inchangée sauf petite amélioration poster) ===
 class FavoriteMovieCard extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
   final PlaylistService playlistService;
   final MovieService movieService;
   final VoidCallback onRemoved;
-  final VoidCallback onFavoriteChanged; // <-- NOUVEAU
+  final VoidCallback onFavoriteChanged;
 
   const FavoriteMovieCard({
     Key? key,
@@ -143,20 +130,21 @@ class FavoriteMovieCard extends StatefulWidget {
 class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
   bool isHovered = false;
 
-  String get posterUrl => widget.movie.posterUrl.isNotEmpty
-      ? widget.movie.posterUrl
-      : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  String get posterUrl {
+    final url = widget.movie.posterUrl;
+    if (url.contains('cloudinary.com')) {
+      return url.replaceAll('/upload/', '/upload/w_500,c_limit,q_auto,f_auto/');
+    }
+    return url.isNotEmpty ? url : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  }
 
   void _removeFromFavorites() async {
     await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
     widget.onRemoved();
-    widget.onFavoriteChanged(); // <-- Rafraîchit la liste
+    widget.onFavoriteChanged();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("${widget.movie.title} retiré des favoris"),
-          backgroundColor: Colors.purple[700],
-        ),
+        SnackBar(content: Text("${widget.movie.title} retiré des favoris"), backgroundColor: Colors.purple[700]),
       );
     }
   }
@@ -175,7 +163,6 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
           try {
             final fullMovie = await widget.movieService.getMovieDetails(widget.movie.id);
             if (!mounted) return;
-
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -188,9 +175,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
               ),
             );
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Erreur : $e")),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur : $e")));
           }
         },
         child: Stack(
@@ -210,16 +195,8 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                       fit: BoxFit.cover,
                       loadingBuilder: (_, child, progress) => progress == null
                           ? child
-                          : Container(
-                        color: Colors.grey[800],
-                        height: 260,
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple)),
-                      ),
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 260,
-                        color: Colors.grey[850],
-                        child: const Icon(Icons.broken_image, color: Colors.grey, size: 60),
-                      ),
+                          : Container(color: Colors.grey[800], height: 260, child: const Center(child: CircularProgressIndicator(color: Colors.purple))),
+                      errorBuilder: (_, __, ___) => Container(height: 260, color: Colors.grey[850], child: const Icon(Icons.broken_image, color: Colors.grey, size: 60)),
                     ),
                   ),
                 ),
@@ -228,11 +205,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                   widget.movie.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isHovered ? Colors.purple : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: isHovered ? Colors.purple : Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ],
