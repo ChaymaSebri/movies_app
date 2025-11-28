@@ -5,14 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="acbc5754-b44f-4462-a80c-db3d170b3496" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/screens/admin/add_movie_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/cloudinary_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/movie_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/movie_model.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/services/movie_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/movie_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/services/playlist_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/playlist_service.dart" afterDir="false" />
     </list>
@@ -47,13 +41,17 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
     "git-widget-placeholder": "feature-movie",
     "io.flutter.reload.alreadyRun": "true",
     "settings.editor.selected.configurable": "AndroidSdkUpdater",
     "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\user\Desktop\IGL4\Dev_mobile\movies_app\" />
+    </key>
+  </component>
   <component name="RunManager" selected="Flutter.main.dart">
     <configuration name="test_model.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
       <option name="filePath" value="$PROJECT_DIR$/lib/test_model.dart" />

@@ -1,19 +1,25 @@
 // lib/services/movie_service.dart
-// VERSION FINALE 100% COMPATIBLE + FILMS MANUELS
+// VERSION FINALE ULTIME → Singleton + Cache partagé + Films manuels parfaits
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
 import './api_service.dart';
 
 class MovieService {
+  // ====================== SINGLETON (garde ça !) ======================
+  static final MovieService _instance = MovieService._internal();
+  factory MovieService() => _instance;
+  MovieService._internal();
+
+  // ====================== RÉFÉRENCES ======================
   final CollectionReference _moviesRef = FirebaseFirestore.instance.collection('movies');
   final ApiService _apiService = ApiService();
 
-  // ====================== CACHE API (comme avant) ======================
+  // ====================== CACHE API (maintenant partagé partout !) ======================
   List<Movie>? _cachedPopular;
   List<Movie>? _cachedTopRated;
   List<Movie>? _cachedUpcoming;
 
-  // ====================== ANCIENNES MÉTHODES (GARDÉES POUR COMPATIBILITÉ) ======================
+  // ====================== ANCIENNES MÉTHODES (compatibilité) ======================
   Future<List<Movie>> getPopularMovies() async {
     if (_cachedPopular != null) return _cachedPopular!;
     final raw = await _apiService.getPopularMovies();
@@ -36,18 +42,15 @@ class MovieService {
   }
 
   Future<Movie> getMovieDetails(String movieId) async {
-    // 1. Priorité : si le film existe en manuel → on le prend
     final doc = await _moviesRef.doc(movieId).get();
     if (doc.exists) {
       return Movie.fromFirestore(doc);
     }
-
-    // 2. Sinon → on va chercher dans l'API TMDB
     final json = await _apiService.getMovieDetails(movieId);
     return Movie.fromJson(json);
   }
 
-  // ====================== NOUVELLES MÉTHODES (FILMS MANUELS + API FUSIONNÉS) ======================
+  // ====================== NOUVELLES MÉTHODES (fusion manuels + API) ======================
   Stream<List<Movie>> getMoviesByCategory(String category) {
     return _moviesRef
         .where('category', isEqualTo: category)

@@ -21,6 +21,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
+
+      // APP BAR
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         elevation: 0,
@@ -34,8 +36,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         centerTitle: true,
       ),
+
+      // BODY (inchangé)
       body: StreamBuilder<List<Movie>>(
-        stream: _playlistService.getFavoriteMoviesStream(widget.currentUserId), // CHANGEMENT CLÉ
+        stream: _playlistService.getFavoriteMoviesStream(widget.currentUserId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.purple));
@@ -63,12 +67,31 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 currentUserId: widget.currentUserId,
                 playlistService: _playlistService,
                 movieService: _movieService,
-                onRemoved: () => setState(() {}), // Rafraîchit instantanément
+                onRemoved: () => setState(() {}),
                 onFavoriteChanged: () => setState(() {}),
               );
             },
           );
         },
+      ),
+
+      // LA BARRE DU BAS QUI RÉAPPARAÎT (AJOUTÉ ICI)
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: const Color(0xFF1E1E1E),
+        selectedItemColor: Colors.purple,
+        unselectedItemColor: Colors.grey,
+        currentIndex: 1, // 1 = Favoris (0 = Discover, 2 = Matching)
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pop(context); // Retour à Discover
+          }
+          // Tu peux ajouter d'autres actions ici plus tard (ex: index 2 → Matching)
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favoris"),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+        ],
       ),
     );
   }
@@ -104,7 +127,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
-// === CARTE FAVORIS (inchangée sauf petite amélioration poster) ===
+// CARTE FAVORIS (inchangée, déjà parfaite avec hover)
 class FavoriteMovieCard extends StatefulWidget {
   final Movie movie;
   final String currentUserId;
