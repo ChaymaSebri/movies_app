@@ -85,9 +85,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     if (_isLoadingUser) {
       return const Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.purple),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.purple)),
       );
     }
 
@@ -123,20 +121,16 @@ class _MoviesListScreenState extends State<MoviesListScreen>
               onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
               child: CircleAvatar(
                 radius: 22,
-                backgroundColor: Colors.purple.withOpacity(0.2),
+                backgroundColor: Colors.purple.withAlpha((0.2 * 255).round()),
                 child: CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.transparent,
-                  backgroundImage: (userPhotoUrl != null &&
-                          userPhotoUrl!.isNotEmpty)
+                  backgroundImage:
+                      (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
                       ? NetworkImage(userPhotoUrl!)
                       : null,
                   child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
-                      ? const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 24,
-                        )
+                      ? const Icon(Icons.person, color: Colors.white, size: 24)
                       : null,
                 ),
               ),
@@ -199,10 +193,15 @@ class _MoviesListScreenState extends State<MoviesListScreen>
           if (index == 1) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const FavoritesScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const FavoritesScreen()),
             );
+            return;
+          }
+
+          // Navigate to matching page when tapping the Matching tab
+          if (index == 2) {
+            Navigator.pushNamed(context, AppRoutes.matching);
+            return;
           }
         },
         items: const [
@@ -225,10 +224,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(
-            child: Text(
-              "Aucun film",
-              style: TextStyle(color: Colors.white70),
-            ),
+            child: Text("Aucun film", style: TextStyle(color: Colors.white70)),
           );
         }
 
@@ -349,9 +345,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => MovieDetailScreen(
-                movieId: widget.movie.id,
-              ),
+              builder: (_) => MovieDetailScreen(movieId: widget.movie.id),
             ),
           );
         },
@@ -417,16 +411,18 @@ class _MovieGridCardState extends State<MovieGridCard> {
               top: 8,
               right: 8,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded,
-                        color: Colors.amber, size: 18),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       rating,
@@ -461,7 +457,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
                             : Icons.favorite_border_rounded,
                         color: isFavorite ? Colors.purple : Colors.white,
                         shadows: const [
-                          Shadow(blurRadius: 12, color: Colors.black54)
+                          Shadow(blurRadius: 12, color: Colors.black54),
                         ],
                       ),
                 onPressed: isLoadingFavorite ? null : _toggleFavorite,

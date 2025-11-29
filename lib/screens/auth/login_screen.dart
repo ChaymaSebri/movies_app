@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
-  
+
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -88,10 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Text(
                   "Welcome Back!",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -143,10 +140,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscurePassword,
                     validator: PasswordValidatorUtil.validatorWith(
                       requiredMessage: 'Please enter your password',
-                      minLengthMessage: 'Password must be at least 8 characters',
-                      uppercaseMessage: 'Password must contain an uppercase letter',
+                      minLengthMessage:
+                          'Password must be at least 8 characters',
+                      uppercaseMessage:
+                          'Password must contain an uppercase letter',
                       numberMessage: 'Password must contain a number',
-                      specialCharMessage: 'Password must contain a special character',
+                      specialCharMessage:
+                          'Password must contain a special character',
                       minLength: 8,
                     ),
                     onSaved: (newValue) => password = newValue ?? '',
@@ -157,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withAlpha((0.1 * 255).round()),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.red),
                       ),

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:movies_app/constants/app_routes.dart';
 import 'package:movies_app/services/auth_service.dart';
 import 'package:movies_app/services/user_service.dart';
 import 'package:movies_app/services/cloudinary_service.dart';
@@ -28,12 +27,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   File? _selectedProfilePicture;
 
   // Form field values
@@ -65,11 +64,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _selectProfilePhoto() async {
     final image = await ImagePickerHelper.pickImage();
-    
+
     if (image != null) {
       // Vérifier la validité de l'image
       final isValid = await ImagePickerHelper.isValidImage(image);
-      
+
       if (!isValid && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -79,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
         return;
       }
-      
+
       setState(() {
         _selectedProfilePicture = image;
       });
@@ -185,7 +184,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           backgroundImage: _selectedProfilePicture != null
                               ? FileImage(_selectedProfilePicture!)
                               : null,
-                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surface,
                           child: _selectedProfilePicture != null
                               ? null
                               : Icon(
@@ -202,7 +203,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Theme.of(context).scaffoldBackgroundColor,
+                                color: Theme.of(
+                                  context,
+                                ).scaffoldBackgroundColor,
                                 width: 2,
                               ),
                             ),
@@ -221,9 +224,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   Text(
                     "Add a profile photo (optional)",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                   ),
                 ],
               ),
@@ -233,10 +236,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   Text(
                     "Create an Account",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -410,7 +410,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withAlpha((0.1 * 255).round()),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.red),
                         ),

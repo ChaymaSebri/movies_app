@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class AdminService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -13,13 +14,10 @@ class AdminService {
 
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        return {
-          'id': doc.id,
-          ...data,
-        };
+        return {'id': doc.id, ...data};
       }).toList();
     } catch (e) {
-      print('Erreur lors de la récupération des utilisateurs: $e');
+      debugPrint('Erreur lors de la récupération des utilisateurs: $e');
       rethrow;
     }
   }
@@ -40,7 +38,7 @@ class AdminService {
         'deactivatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Erreur lors de la désactivation: $e');
+      debugPrint('Erreur lors de la désactivation: $e');
       rethrow;
     }
   }
@@ -53,7 +51,7 @@ class AdminService {
         'deactivatedAt': FieldValue.delete(),
       });
     } catch (e) {
-      print('Erreur lors de l\'activation: $e');
+      debugPrint('Erreur lors de l\'activation: $e');
       rethrow;
     }
   }
@@ -77,7 +75,7 @@ class AdminService {
       });
       return docRef.id;
     } catch (e) {
-      print('Erreur lors de l\'ajout du film: $e');
+      debugPrint('Erreur lors de l\'ajout du film: $e');
       rethrow;
     }
   }
@@ -133,7 +131,7 @@ class AdminService {
         'mostPopularMovieCount': maxCount,
       };
     } catch (e) {
-      print('Erreur lors de la récupération des statistiques: $e');
+      debugPrint('Erreur lors de la récupération des statistiques: $e');
       rethrow;
     }
   }
@@ -143,25 +141,27 @@ class AdminService {
     try {
       final snapshot = await _firestore.collection('users').get();
 
-      final results = snapshot.docs.where((doc) {
-        final data = doc.data();
-        final firstName = (data['firstName'] ?? '').toString().toLowerCase();
-        final lastName = (data['lastName'] ?? '').toString().toLowerCase();
-        final searchQuery = query.toLowerCase();
+      final results = snapshot.docs
+          .where((doc) {
+            final data = doc.data();
+            final firstName = (data['firstName'] ?? '')
+                .toString()
+                .toLowerCase();
+            final lastName = (data['lastName'] ?? '').toString().toLowerCase();
+            final searchQuery = query.toLowerCase();
 
-        return firstName.contains(searchQuery) || 
-               lastName.contains(searchQuery);
-      }).map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          ...data,
-        };
-      }).toList();
+            return firstName.contains(searchQuery) ||
+                lastName.contains(searchQuery);
+          })
+          .map((doc) {
+            final data = doc.data();
+            return {'id': doc.id, ...data};
+          })
+          .toList();
 
       return results;
     } catch (e) {
-      print('Erreur lors de la recherche: $e');
+      debugPrint('Erreur lors de la recherche: $e');
       rethrow;
     }
   }
@@ -171,12 +171,27 @@ class AdminService {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
       if (!doc.exists) return false;
-      
+
       final data = doc.data()!;
       return data['role'] == 'admin' || data['isAdmin'] == true;
     } catch (e) {
-      print('Erreur lors de la vérification admin: $e');
+      debugPrint('Erreur lors de la vérification admin: $e');
       return false;
+    }
+  }
+
+  // Promouvoir un utilisateur en admin (client-side quick method)
+  // NOTE: This updates the user document directly. For production,
+  // prefer a Cloud Function secured by the Admin SDK.
+  Future<void> promoteToAdmin(String userId) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'role': 'admin',
+        'isAdmin': true,
+      });
+    } catch (e) {
+      debugPrint('Erreur lors de la promotion en admin: $e');
+      rethrow;
     }
   }
 }

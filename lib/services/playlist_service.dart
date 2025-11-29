@@ -1,6 +1,7 @@
 // playlist_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/favorite_model.dart';
 import '../models/movie_model.dart';
 import 'movie_service.dart';
@@ -11,7 +12,8 @@ class PlaylistService {
   factory PlaylistService() => _instance;
   PlaylistService._internal();
 
-  final CollectionReference _favoritesRef = FirebaseFirestore.instance.collection('favorites');
+  final CollectionReference _favoritesRef = FirebaseFirestore.instance
+      .collection('favorites');
 
   // -----------------------------------------------------------
   // 1. ADD FAVORITE
@@ -34,7 +36,7 @@ class PlaylistService {
         await _favoritesRef.add(favorite.toFirestoreMap());
       }
     } catch (e) {
-      print("Error adding favorite: $e");
+      debugPrint("Error adding favorite: $e");
       rethrow;
     }
   }
@@ -53,7 +55,7 @@ class PlaylistService {
         await _favoritesRef.doc(doc.id).delete();
       }
     } catch (e) {
-      print("Error removing favorite: $e");
+      debugPrint("Error removing favorite: $e");
       rethrow;
     }
   }
@@ -66,8 +68,10 @@ class PlaylistService {
         .where('userId', isEqualTo: userId)
         .orderBy('addedAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => Favorite.fromFirestore(doc)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Favorite.fromFirestore(doc)).toList(),
+        );
   }
 
   // -----------------------------------------------------------
@@ -86,12 +90,11 @@ class PlaylistService {
   // OPTIONAL: GET FAVORITE MOVIE IDS (useful for batch fetching movies)
   // -----------------------------------------------------------
   Future<List<String>> getFavoriteMovieIds(String userId) async {
-    final query = await _favoritesRef
-        .where('userId', isEqualTo: userId)
-        .get();
+    final query = await _favoritesRef.where('userId', isEqualTo: userId).get();
 
     return query.docs.map((doc) => doc['movieId'] as String).toList();
   }
+
   // ------------------------
   // New: Get full Movie objects for a user
   // ------------------------
@@ -112,6 +115,4 @@ class PlaylistService {
 
     return movies;
   }
-
-
 }

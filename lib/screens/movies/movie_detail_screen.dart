@@ -11,11 +11,8 @@ class MovieDetailScreen extends StatefulWidget {
   final String? movieId;
   final VoidCallback? onFavoriteChanged;
 
-  const MovieDetailScreen({
-    Key? key,
-    this.movieId,
-    this.onFavoriteChanged,
-  }) : super(key: key);
+  const MovieDetailScreen({Key? key, this.movieId, this.onFavoriteChanged})
+    : super(key: key);
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
@@ -71,8 +68,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Future<void> _loadMovieDetails() async {
     // Get movieId from widget or route arguments
-    final movieId = widget.movieId ?? 
-        (ModalRoute.of(context)?.settings.arguments as Map?)?['movieId'] as String?;
+    final movieId =
+        widget.movieId ??
+        (ModalRoute.of(context)?.settings.arguments as Map?)?['movieId']
+            as String?;
 
     if (movieId == null) {
       setState(() {
@@ -139,9 +138,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isFavorite
-                ? "Ajouté aux favoris !"
-                : "Retiré des favoris"),
+            content: Text(
+              isFavorite ? "Ajouté aux favoris !" : "Retiré des favoris",
+            ),
             backgroundColor: isFavorite ? Colors.purple[700] : Colors.grey[800],
             duration: const Duration(seconds: 2),
           ),
@@ -150,7 +149,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erreur favoris"), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text("Erreur favoris"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -164,9 +166,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (_isLoadingUser || _isLoadingMovie) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.purple),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.purple)),
       );
     }
 
@@ -191,7 +191,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -213,8 +216,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         : "https://picsum.photos/1280/720?blur=2";
 
     final year = movie.releaseDate?.year.toString() ?? "Inconnue";
-    final duration = movie.runtime != null ? "${movie.runtime} min" : "Durée inconnue";
-    final rating = movie.rating != null ? movie.rating!.toStringAsFixed(1) : "N/A";
+    final duration = movie.runtime != null
+        ? "${movie.runtime} min"
+        : "Durée inconnue";
+    final rating = movie.rating != null
+        ? movie.rating!.toStringAsFixed(1)
+        : "N/A";
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -223,7 +230,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -240,7 +250,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   image: NetworkImage(finalBackdrop),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withAlpha((0.7 * 255).round()),
                     BlendMode.dstATop,
                   ),
                 ),
@@ -258,7 +268,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         fontSize: 38,
                         fontWeight: FontWeight.bold,
                         shadows: [
-                          Shadow(offset: Offset(0, 2), blurRadius: 10, color: Colors.black87),
+                          Shadow(
+                            offset: Offset(0, 2),
+                            blurRadius: 10,
+                            color: Colors.black87,
+                          ),
                         ],
                       ),
                     ),
@@ -275,13 +289,33 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   // Année + Durée
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today_rounded, color: Colors.grey, size: 20),
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Text(year, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                      Text(
+                        year,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                      ),
                       const SizedBox(width: 30),
-                      const Icon(Icons.access_time_rounded, color: Colors.grey, size: 20),
+                      const Icon(
+                        Icons.access_time_rounded,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Text(duration, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                      Text(
+                        duration,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -291,7 +325,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
-                      children: movie.genres.map((g) => _buildGenreChip(g)).toList(),
+                      children: movie.genres
+                          .map((g) => _buildGenreChip(g))
+                          .toList(),
                     ),
 
                   const SizedBox(height: 30),
@@ -303,7 +339,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.purpleAccent, width: 4),
+                          border: Border.all(
+                            color: Colors.purpleAccent,
+                            width: 4,
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -315,7 +354,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const Icon(Icons.star_rounded, color: Colors.purpleAccent, size: 26),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.purpleAccent,
+                              size: 26,
+                            ),
                           ],
                         ),
                       ),
@@ -323,8 +366,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Note moyenne", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text("sur 10", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                          Text(
+                            "Note moyenne",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "sur 10",
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
                         ],
                       ),
                     ],
@@ -333,11 +386,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   const SizedBox(height: 40),
 
                   // Synopsis
-                  const Text("Synopsis", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Synopsis",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Text(
-                    movie.description.isEmpty ? "Aucun synopsis disponible." : movie.description,
-                    style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.7),
+                    movie.description.isEmpty
+                        ? "Aucun synopsis disponible."
+                        : movie.description,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      height: 1.7,
+                    ),
                   ),
 
                   const SizedBox(height: 60),
@@ -351,32 +417,51 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.purpleAccent, width: 2.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        side: const BorderSide(
+                          color: Colors.purpleAccent,
+                          width: 2.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                         elevation: 8,
-                        shadowColor: Colors.purple.withOpacity(0.4),
+                        shadowColor: Colors.purple.withAlpha(
+                          (0.4 * 255).round(),
+                        ),
                       ),
                       child: isLoadingFavorite
                           ? const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(strokeWidth: 3, color: Colors.purpleAccent),
-                      )
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Colors.purpleAccent,
+                              ),
+                            )
                           : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isFavorite ? Colors.purpleAccent : Colors.white,
-                            size: 30,
-                          ),
-                          const SizedBox(width: 14),
-                          Text(
-                            isFavorite ? "Retirer des favoris" : "Ajouter aux favoris",
-                            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isFavorite
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  color: isFavorite
+                                      ? Colors.purpleAccent
+                                      : Colors.white,
+                                  size: 30,
+                                ),
+                                const SizedBox(width: 14),
+                                Text(
+                                  isFavorite
+                                      ? "Retirer des favoris"
+                                      : "Ajouter aux favoris",
+                                  style: const TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
 
@@ -392,8 +477,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Widget _buildGenreChip(String genre) {
     return Chip(
-      label: Text(genre, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-      backgroundColor: Colors.purpleAccent.withOpacity(0.85),
+      label: Text(
+        genre,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: Colors.purpleAccent.withAlpha((0.85 * 255).round()),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       elevation: 3,

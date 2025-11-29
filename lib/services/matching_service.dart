@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/match_model.dart';
+import 'package:flutter/foundation.dart';
+import 'package:movies_app/models/matchmodel.dart';
+
+// Lower-case constant name to follow linter conventions
+const double minMatchPercentage = 75.0;
 
 class MatchingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const double MIN_MATCH_PERCENTAGE = 75.0;
+  // final FirebaseFirestore _firestore declared below
 
   // Calculer le pourcentage de correspondance entre deux listes de films
   double calculateMatchPercentage(
@@ -20,10 +24,7 @@ class MatchingService {
         .toList();
 
     // Calculer le pourcentage basé sur l'union des deux listes
-    final totalUniqueMovies = {
-      ...userMovies,
-      ...otherUserMovies,
-    }.length;
+    final totalUniqueMovies = {...userMovies, ...otherUserMovies}.length;
 
     if (totalUniqueMovies == 0) return 0.0;
 
@@ -81,8 +82,8 @@ class MatchingService {
           otherUserMovies,
         );
 
-        // Ne garder que les matches >= 75%
-        if (matchPercentage >= MIN_MATCH_PERCENTAGE) {
+        // Ne garder que les matches >= seuil configurable
+        if (matchPercentage >= minMatchPercentage) {
           final commonMovies = findCommonMovies(
             currentUserMovies,
             otherUserMovies,
@@ -98,15 +99,15 @@ class MatchingService {
       }
 
       // Trier par pourcentage décroissant
-      matches.sort((a, b) => 
-        (b['matchPercentage'] as double).compareTo(
+      matches.sort(
+        (a, b) => (b['matchPercentage'] as double).compareTo(
           a['matchPercentage'] as double,
-        )
+        ),
       );
 
       return matches;
     } catch (e) {
-      print('Erreur lors de la recherche de matches: $e');
+      debugPrint('Erreur lors de la recherche de matches: $e');
       rethrow;
     }
   }
@@ -119,7 +120,7 @@ class MatchingService {
           .doc('${match.userId1}_${match.userId2}')
           .set(match.toFirestore());
     } catch (e) {
-      print('Erreur lors de la sauvegarde du match: $e');
+      debugPrint('Erreur lors de la sauvegarde du match: $e');
       rethrow;
     }
   }
@@ -148,7 +149,7 @@ class MatchingService {
 
       return null;
     } catch (e) {
-      print('Erreur lors de la récupération du match: $e');
+      debugPrint('Erreur lors de la récupération du match: $e');
       return null;
     }
   }
@@ -163,15 +164,15 @@ class MatchingService {
           id: '${userId}_${matchData['userId']}',
           userId1: userId,
           userId2: matchData['userId'],
-          matchPercentage: matchData['matchPercentage'],
-          commonMovies: matchData['commonMovies'],
+          matchPercentage: (matchData['matchPercentage'] as num).toDouble(),
+          commonMovies: List<String>.from(matchData['commonMovies'] ?? []),
           lastCalculated: DateTime.now(),
         );
 
         await saveMatch(match);
       }
     } catch (e) {
-      print('Erreur lors du recalcul des matches: $e');
+      debugPrint('Erreur lors du recalcul des matches: $e');
       rethrow;
     }
   }

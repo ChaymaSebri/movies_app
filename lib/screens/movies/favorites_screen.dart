@@ -17,7 +17,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final AuthService _authService = AuthService();
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
-  
+
   late Future<List<Movie>> _favoritesFuture;
   String? _currentUserId;
   bool _isLoadingUser = true;
@@ -44,7 +44,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       _currentUserId = userId;
       _isLoadingUser = false;
     });
-    
+
     _loadFavorites();
   }
 
@@ -62,9 +62,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (_isLoadingUser) {
       return const Scaffold(
         backgroundColor: Color(0xFF121212),
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.purple),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.purple)),
       );
     }
 
@@ -92,7 +90,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         title: const Text(
           "Ma Playlist",
-          style: TextStyle(color: Colors.purple, fontSize: 26, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.purple,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -100,7 +102,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         future: _favoritesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.purple));
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.purple),
+            );
           }
 
           final favorites = snapshot.data ?? [];
@@ -143,22 +147,44 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Container(
             width: 90,
             height: 90,
-            decoration: BoxDecoration(color: Colors.purple.withOpacity(0.2), shape: BoxShape.circle),
-            child: const Icon(Icons.favorite_border, size: 48, color: Colors.purple),
+            decoration: BoxDecoration(
+              color: Colors.purple.withAlpha((0.2 * 255).round()),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.favorite_border,
+              size: 48,
+              color: Colors.purple,
+            ),
           ),
           const SizedBox(height: 30),
-          const Text("Aucun favori", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text(
+            "Aucun favori",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
-          const Text("Ajoute des films avec le cœur", style: TextStyle(color: Colors.white54, fontSize: 16)),
+          const Text(
+            "Ajoute des films avec le cœur",
+            style: TextStyle(color: Colors.white54, fontSize: 16),
+          ),
           const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.purple,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
-            child: const Text("Découvrir des films", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            child: const Text(
+              "Découvrir des films",
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -197,7 +223,10 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
       : "https://picsum.photos/500/750?random=${widget.movie.id}";
 
   void _removeFromFavorites() async {
-    await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
+    await widget.playlistService.removeFavorite(
+      widget.currentUserId,
+      widget.movie.id,
+    );
     widget.onRemoved();
     widget.onFavoriteChanged();
     if (mounted) {
@@ -224,9 +253,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => MovieDetailScreen(
-                movieId: widget.movie.id,
-              ),
+              builder: (_) => MovieDetailScreen(movieId: widget.movie.id),
             ),
           );
         },
@@ -248,14 +275,23 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                       loadingBuilder: (_, child, progress) => progress == null
                           ? child
                           : Container(
-                        color: Colors.grey[800],
-                        height: 260,
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple)),
-                      ),
+                              color: Colors.grey[800],
+                              height: 260,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                            ),
                       errorBuilder: (_, __, ___) => Container(
                         height: 260,
                         color: Colors.grey[850],
-                        child: const Icon(Icons.broken_image, color: Colors.grey, size: 60),
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                          size: 60,
+                        ),
                       ),
                     ),
                   ),
@@ -271,7 +307,10 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                     fontSize: 15,
                   ),
                 ),
-                Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  year,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
               ],
             ),
             // Note
@@ -280,12 +319,25 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
               right: 8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
-                    Text(rating, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text(
+                      rating,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -295,7 +347,12 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
               bottom: 80,
               right: 8,
               child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32, shadows: [Shadow(blurRadius: 12, color: Colors.black54)]),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 32,
+                  shadows: [Shadow(blurRadius: 12, color: Colors.black54)],
+                ),
                 onPressed: _removeFromFavorites,
               ),
             ),

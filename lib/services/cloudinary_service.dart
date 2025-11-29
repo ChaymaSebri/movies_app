@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:movies_app/config/cloudinary_config.dart';
 
@@ -20,7 +21,8 @@ class CloudinaryService {
   }) async {
     try {
       // Créer un identifiant unique pour l'image
-      final String publicId = 'user_${userId}_${DateTime.now().millisecondsSinceEpoch}';
+      final String publicId =
+          'user_${userId}_${DateTime.now().millisecondsSinceEpoch}';
 
       // Upload l'image sur Cloudinary
       CloudinaryResponse response = await _cloudinary.uploadFile(
@@ -50,14 +52,14 @@ class CloudinaryService {
       // Extraire le publicId depuis l'URL Cloudinary
       final uri = Uri.parse(imageUrl);
       final pathSegments = uri.pathSegments;
-      
+
       // Trouver l'index après "upload/"
       final uploadIndex = pathSegments.indexOf('upload');
       if (uploadIndex == -1) return imageUrl;
-      
+
       // Reconstruire l'URL avec les transformations
       final publicId = pathSegments.sublist(uploadIndex + 1).join('/');
-      
+
       return 'https://res.cloudinary.com/${CloudinaryConfig.cloudName}/image/upload/'
           'w_$width,h_$height,c_fill,f_$format/$publicId';
     } catch (e) {
@@ -77,10 +79,12 @@ class CloudinaryService {
     // 1. Garder les anciennes images (Cloudinary a beaucoup d'espace gratuit)
     // 2. Créer un backend qui gère la suppression
     // 3. Utiliser les webhooks Cloudinary pour nettoyer automatiquement
-    
+
     // Pour l'instant, nous n'implémentons pas la suppression
     // Les images restent sur Cloudinary mais ne sont plus référencées
-    print('Note: Image suppression non implémentée côté client pour sécurité');
+    debugPrint(
+      'Note: Image suppression non implémentée côté client pour sécurité',
+    );
   }
 
   /// Vérifier si une URL est valide
@@ -94,17 +98,17 @@ class CloudinaryService {
       final uri = Uri.parse(imageUrl);
       final pathSegments = uri.pathSegments;
       final uploadIndex = pathSegments.indexOf('upload');
-      
+
       if (uploadIndex == -1) return null;
-      
+
       // Joindre tous les segments après "upload/" et retirer l'extension
       final publicIdWithExt = pathSegments.sublist(uploadIndex + 1).join('/');
       final lastDotIndex = publicIdWithExt.lastIndexOf('.');
-      
+
       if (lastDotIndex != -1) {
         return publicIdWithExt.substring(0, lastDotIndex);
       }
-      
+
       return publicIdWithExt;
     } catch (e) {
       return null;
@@ -113,20 +117,28 @@ class CloudinaryService {
 
   /// Obtenir une URL de thumbnail
   String getThumbnailUrl(String imageUrl, {int size = 150}) {
-    return getOptimizedImageUrl(
-      imageUrl: imageUrl,
-      width: size,
-      height: size,
-    );
+    return getOptimizedImageUrl(imageUrl: imageUrl, width: size, height: size);
   }
 
   /// Obtenir différentes tailles d'image
   Map<String, String> getResponsiveUrls(String imageUrl) {
     return {
       'thumbnail': getThumbnailUrl(imageUrl, size: 150),
-      'small': getOptimizedImageUrl(imageUrl: imageUrl, width: 400, height: 400),
-      'medium': getOptimizedImageUrl(imageUrl: imageUrl, width: 800, height: 800),
-      'large': getOptimizedImageUrl(imageUrl: imageUrl, width: 1200, height: 1200),
+      'small': getOptimizedImageUrl(
+        imageUrl: imageUrl,
+        width: 400,
+        height: 400,
+      ),
+      'medium': getOptimizedImageUrl(
+        imageUrl: imageUrl,
+        width: 800,
+        height: 800,
+      ),
+      'large': getOptimizedImageUrl(
+        imageUrl: imageUrl,
+        width: 1200,
+        height: 1200,
+      ),
       'original': imageUrl,
     };
   }
