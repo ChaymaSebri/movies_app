@@ -74,27 +74,33 @@ class AuthService {
 
   // Firebase Auth error handling
   String _handleAuthException(FirebaseAuthException e) {
+    print('FirebaseAuthException: ${e.code} - ${e.message}');
     switch (e.code) {
-      case 'weak-password':
-        return 'The password is too weak.';
-      case 'email-already-in-use':
-        return 'This email is already in use.';
+      // Email/Password errors
+      case 'invalid-credential':
+        return 'Invalid email or password.';
       case 'invalid-email':
-        return 'Invalid email.';
+        return 'Invalid email address.';
       case 'user-disabled':
         return 'This account has been disabled.';
       case 'user-not-found':
-        return 'No user found with this email.';
+        return 'No account found with this email.';
       case 'wrong-password':
         return 'Incorrect password.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'operation-not-allowed':
-        return 'Operation not allowed.';
+      
+      // Sign-up errors
+      case 'weak-password':
+        return 'Password is too weak. Please use a stronger password.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email.';
+      
+      // Network errors
       case 'network-request-failed':
         return 'Connection error. Please check your internet.';
+      
       default:
-        return 'An error occurred: ${e.message}';
+        // Log the actual error for debugging
+        return 'Login failed. Please try again.';
     }
   }
 }

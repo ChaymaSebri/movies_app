@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 1. Sign in with Firebase Auth
       final credential = await _authService.signIn(
-        email: email,
+        email: email.trim(),
         password: password,
       );
 
@@ -74,14 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleForgotPassword() async {
     final colorScheme = Theme.of(context).colorScheme;
     final emailController = TextEditingController();
-    
+
     // Show dialog to get email
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: Icon(
           Icons.lock_reset_rounded,
           size: 48,
@@ -111,17 +109,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: colorScheme.primary,
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: colorScheme.primary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
                 ),
               ),
               autofocus: true,
@@ -154,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
       requiredMessage: 'Email is required',
       invalidMessage: 'Please enter a valid email address',
     );
-    
+
     final validationError = emailValidator.validate(result);
     if (validationError != null) {
       _showSnackBar(validationError, isError: true);
@@ -196,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage;
-      
+
       switch (e.code) {
         case 'user-not-found':
           errorMessage = 'No account found with this email address';
@@ -210,12 +207,10 @@ class _LoginScreenState extends State<LoginScreen> {
         default:
           errorMessage = e.message ?? 'Failed to send reset email';
       }
-      
+
       _showSnackBar(errorMessage, isError: true);
-      
     } catch (e) {
       _showSnackBar('An error occurred. Please try again.', isError: true);
-      
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -225,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showSnackBar(String message, {bool isError = false}) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -238,13 +233,11 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError 
-            ? Theme.of(context).colorScheme.error 
+        backgroundColor: isError
+            ? Theme.of(context).colorScheme.error
             : Colors.green,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -254,19 +247,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 40),
-                
+
                 // App Title/Logo Area
                 Column(
                   children: [
@@ -276,10 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.secondary,
-                          ],
+                          colors: [colorScheme.primary, colorScheme.secondary],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -299,7 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // App Title
                     Text(
                       "MovieMates",
@@ -321,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 56),
 
                 // Form
@@ -339,7 +332,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: colorScheme.primary,
                           ),
                           filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          fillColor: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -393,7 +387,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          fillColor: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -418,14 +413,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         obscureText: _obscurePassword,
-                        validator: PasswordValidatorUtil.validatorWith(
-                          requiredMessage: 'Please enter your password',
-                          minLengthMessage: 'Password must be at least 8 characters',
-                          uppercaseMessage: 'Password must contain an uppercase letter',
-                          numberMessage: 'Password must contain a number',
-                          specialCharMessage: 'Password must contain a special character',
-                          minLength: 8,
-                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
+
                         onSaved: (newValue) => password = newValue ?? '',
                       ),
 
