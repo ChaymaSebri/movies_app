@@ -11,8 +11,7 @@ class MovieDetailScreen extends StatefulWidget {
   final String? movieId;
   final VoidCallback? onFavoriteChanged;
 
-  const MovieDetailScreen({Key? key, this.movieId, this.onFavoriteChanged})
-    : super(key: key);
+  const MovieDetailScreen({super.key, this.movieId, this.onFavoriteChanged});
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();

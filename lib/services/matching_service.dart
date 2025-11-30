@@ -130,7 +130,7 @@ class MatchingService {
     try {
       final matchDoc = await _firestore
           .collection('matches')
-          .doc('${userId1}_${userId2}')
+          .doc('${userId1}_$userId2')
           .get();
 
       if (matchDoc.exists) {
@@ -140,7 +140,7 @@ class MatchingService {
       // Essayer l'inverse
       final reverseMatchDoc = await _firestore
           .collection('matches')
-          .doc('${userId2}_${userId1}')
+          .doc('${userId2}_$userId1')
           .get();
 
       if (reverseMatchDoc.exists) {

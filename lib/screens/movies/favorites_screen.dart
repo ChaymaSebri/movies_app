@@ -7,7 +7,7 @@ import '../../../constants/app_routes.dart';
 import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -202,14 +202,14 @@ class FavoriteMovieCard extends StatefulWidget {
   final VoidCallback onFavoriteChanged;
 
   const FavoriteMovieCard({
-    Key? key,
+    super.key,
     required this.movie,
     required this.currentUserId,
     required this.playlistService,
     required this.movieService,
     required this.onRemoved,
     required this.onFavoriteChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<FavoriteMovieCard> createState() => _FavoriteMovieCardState();

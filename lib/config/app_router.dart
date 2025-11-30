@@ -42,7 +42,7 @@ class AppRouter {
           if (!isAdmin) {
             return Scaffold(
               appBar: AppBar(title: const Text('Accès refusé')),
-              body: const Center(child: Text("Vous n\'êtes pas autorisé.")),
+              body: const Center(child: Text("Vous n'êtes pas autorisé.")),
             );
           }
           return const AdminDashboard();

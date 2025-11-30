@@ -13,7 +13,7 @@ class MatchDetailPage extends StatefulWidget {
 class _MatchDetailPageState extends State<MatchDetailPage> {
   final MovieService _movieService = MovieService();
 
-  Map<String, String> _movieTitles = {};
+  final Map<String, String> _movieTitles = {};
   bool _loading = true;
 
   late final Map<String, dynamic>? _args;
