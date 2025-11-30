@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/auth_service.dart';
+import 'package:movies_app/services/admin_service.dart';
 import 'package:movies_app/services/movie_service.dart';
 import 'package:movies_app/services/playlist_service.dart';
 import 'package:movies_app/services/user_service.dart';
@@ -18,6 +19,7 @@ class MoviesListScreen extends StatefulWidget {
 class _MoviesListScreenState extends State<MoviesListScreen>
     with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
+  final AdminService _adminService = AdminService();
   final UserService _userService = UserService();
   final MovieService _movieService = MovieService();
   final PlaylistService _playlistService = PlaylistService();
@@ -28,6 +30,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   String? _currentUserId;
   String? userPhotoUrl;
   bool _isLoadingUser = true;
+  bool _isAdmin = false; // ← NOUVEAU : Statut admin
 
   late final Future<List<Movie>> _popularFuture;
   late final Future<List<Movie>> _topRatedFuture;
@@ -55,13 +58,18 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     }
 
     try {
+      // Charger les données utilisateur
       final user = await _userService.getUserById(userId);
+      
+      // Vérifier si admin
+      final isAdmin = await _adminService.isCurrentUserAdmin();
 
       if (!mounted) return;
 
       setState(() {
         _currentUserId = userId;
         userPhotoUrl = user?.photoUrl;
+        _isAdmin = isAdmin; // ← Stocker le statut
         _isLoadingUser = false;
       });
     } catch (_) {
@@ -115,20 +123,21 @@ class _MoviesListScreenState extends State<MoviesListScreen>
           ),
         ),
         actions: [
+          // Avatar utilisateur
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
               child: CircleAvatar(
                 radius: 22,
-                backgroundColor: Colors.purple.withAlpha((0.2 * 255).round()),
+                backgroundColor: Colors.purple.withValues(alpha: 0.2),
                 child: CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.transparent,
                   backgroundImage:
                       (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
-                      ? NetworkImage(userPhotoUrl!)
-                      : null,
+                          ? NetworkImage(userPhotoUrl!)
+                          : null,
                   child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
                       ? const Icon(Icons.person, color: Colors.white, size: 24)
                       : null,
@@ -198,16 +207,26 @@ class _MoviesListScreenState extends State<MoviesListScreen>
             return;
           }
 
-          // Navigate to matching page when tapping the Matching tab
           if (index == 2) {
             Navigator.pushNamed(context, AppRoutes.matching);
             return;
           }
+
+          if (index == 3 && _isAdmin) {
+            Navigator.pushNamed(context, AppRoutes.adminDashboard);
+            return;
+          }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favoris"),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
+          const BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favoris"),
+          const BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+          // BOUTON ADMIN DASHBOARD (visible seulement si admin)
+          if (_isAdmin)
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: "Admin",
+            ),
         ],
       ),
     );
@@ -376,7 +395,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
                                 ),
                               ),
                             ),
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         height: 260,
                         color: Colors.grey[850],
                         child: const Icon(
@@ -405,8 +424,8 @@ class _MovieGridCardState extends State<MovieGridCard> {
                 ),
               ],
             ),
-
-            // ⭐ Rating
+            
+            // Rating badge
             Positioned(
               top: 8,
               right: 8,
@@ -435,8 +454,8 @@ class _MovieGridCardState extends State<MovieGridCard> {
                 ),
               ),
             ),
-
-            // ❤️ Favorite button
+            
+            // Favorite button
             Positioned(
               bottom: 80,
               right: 8,

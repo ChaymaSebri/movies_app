@@ -1,8 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:movies_app/services/auth_service.dart';
 
 class AdminService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthService _authService = AuthService();
+
+  // FIXED: Vérifier si l'utilisateur actuel est admin
+  Future<bool> isCurrentUserAdmin() async {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) return false;
+    
+    return await isAdmin(userId);
+  }
+
+  // FIXED: Vérifier si un utilisateur est admin par son ID
+  Future<bool> isAdmin(String userId) async {
+    try {
+      // Use get() to avoid threading issues
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (!doc.exists) return false;
+
+      final data = doc.data();
+      if (data == null) return false;
+      
+      return data['role'] == 'admin' || data['isAdmin'] == true;
+    } catch (e) {
+      debugPrint('Erreur lors de la vérification admin: $e');
+      return false;
+    }
+  }
 
   // Récupérer tous les utilisateurs
   Future<List<Map<String, dynamic>>> getAllUsers() async {
@@ -22,12 +49,21 @@ class AdminService {
     }
   }
 
-  // Récupérer les utilisateurs avec pagination
-  Stream<QuerySnapshot> getUsersStream() {
+  // FIXED: Récupérer les utilisateurs avec pagination (now returns proper Stream)
+  Stream<List<Map<String, dynamic>>> getUsersStream() {
     return _firestore
         .collection('users')
         .orderBy('createdAt', descending: true)
-        .snapshots();
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {'id': doc.id, ...data};
+      }).toList();
+    }).handleError((error) {
+      debugPrint('Erreur dans getUsersStream: $error');
+      return <Map<String, dynamic>>[];
+    });
   }
 
   // Désactiver un utilisateur
@@ -80,7 +116,7 @@ class AdminService {
     }
   }
 
-  // Obtenir les statistiques du dashboard
+  // FIXED: Obtenir les statistiques du dashboard
   Future<Map<String, dynamic>> getDashboardStats() async {
     try {
       // Nombre total d'utilisateurs
@@ -144,10 +180,12 @@ class AdminService {
       final results = snapshot.docs
           .where((doc) {
             final data = doc.data();
-            final firstName = (data['firstName'] ?? '')
+            final firstName = (data['firstName'] ?? data['prenom'] ?? '')
                 .toString()
                 .toLowerCase();
-            final lastName = (data['lastName'] ?? '').toString().toLowerCase();
+            final lastName = (data['lastName'] ?? data['nom'] ?? '')
+                .toString()
+                .toLowerCase();
             final searchQuery = query.toLowerCase();
 
             return firstName.contains(searchQuery) ||
@@ -166,23 +204,7 @@ class AdminService {
     }
   }
 
-  // Vérifier si l'utilisateur est admin
-  Future<bool> isAdmin(String userId) async {
-    try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      if (!doc.exists) return false;
-
-      final data = doc.data()!;
-      return data['role'] == 'admin' || data['isAdmin'] == true;
-    } catch (e) {
-      debugPrint('Erreur lors de la vérification admin: $e');
-      return false;
-    }
-  }
-
-  // Promouvoir un utilisateur en admin (client-side quick method)
-  // NOTE: This updates the user document directly. For production,
-  // prefer a Cloud Function secured by the Admin SDK.
+  // Promouvoir un utilisateur en admin
   Future<void> promoteToAdmin(String userId) async {
     try {
       await _firestore.collection('users').doc(userId).update({

@@ -194,7 +194,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 8),
 
                   /// ---------------- STATUS BADGE ----------------
-                  _buildStatusBadge(),
+                  if (_currentUser!.role == 'user')
+                    _buildStatusBadge(),
 
                   const SizedBox(height: 20),
 
@@ -225,23 +226,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: _currentUser!.role.toUpperCase(),
                           iconColor: colorScheme.tertiary,
                         ),
+
                         const SizedBox(height: 12),
-
-                        _InfoCard(
-                          icon: Icons.calendar_today_rounded,
-                          label: 'Member Since',
-                          value: _formatDate(_currentUser!.createdAt),
-                          iconColor: Colors.orange,
-                        ),
+                        if (_currentUser!.role == 'user')
+                          _InfoCard(
+                            icon: Icons.calendar_today_rounded,
+                            label: 'Member Since',
+                            value: _formatDate(_currentUser!.createdAt),
+                            iconColor: Colors.orange,
+                          ),
+                        
                         const SizedBox(height: 32),
-
+                       
                         /// EDIT PROFILE BUTTON
                         SizedBox(
                           width: double.infinity,
                           height: 40,
                           child: FilledButton.icon(
                             onPressed: () async {
-                              // ✅ Attendre le retour et refresh si nécessaire
+                              // Attendre le retour et refresh si nécessaire
                               final shouldRefresh = await Navigator.pushNamed(
                                 context,
                                 AppRoutes.editProfile,
@@ -283,22 +286,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        // If user is admin, show admin dashboard button
-                        if (_currentUser!.role == 'admin')
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.adminDashboard,
-                              );
-                            },
-                            icon: const Icon(Icons.admin_panel_settings),
-                            label: const Text('Admin Dashboard'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
-                            ),
-                          ),
                       ],
                     ),
                   ),
