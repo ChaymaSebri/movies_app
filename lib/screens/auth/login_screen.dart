@@ -4,7 +4,6 @@ import 'package:movies_app/constants/app_routes.dart';
 import 'package:movies_app/services/auth_service.dart';
 import 'package:movies_app/services/user_service.dart';
 import '../../utils/validators/email_validator.dart';
-import '../../utils/validators/password_validator.dart';
 import '../../widgets/account_prompt_row.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String password = '';
 
   Future<void> _handleLogin() async {
-    // Validate form
     final form = _formKey.currentState;
     if (form == null || !form.validate()) {
       return;
@@ -43,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 1. Sign in with Firebase Auth
       final credential = await _authService.signIn(
-        email: email.trim(),
+        email: email,
         password: password,
       );
 
@@ -51,17 +49,28 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await _userService.getUserById(credential.user!.uid);
 
       if (user == null) {
-        throw 'User not found in database';
+        // Sign out immediately
+        await _authService.signOut();
+        throw 'User profile not found in database.';
       }
 
-      // 3. Navigate to profile
+      // 3. CHECK IF USER IS ACTIVE
+      if (!user.isActive) {
+        // Sign out the user immediately
+        await _authService.signOut();
+        throw 'Your account has been deactivated.\nPlease contact the administrator at admin@moviemates.com for assistance.';
+      }
+
+      // 4. Navigate to app (only if active)
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.moviesList);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
