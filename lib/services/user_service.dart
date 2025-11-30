@@ -5,7 +5,7 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionName = 'users';
 
-  // Créer un utilisateur dans Firestore
+  // Create a user in Firestore
   Future<void> createUser(UserModel user) async {
     try {
       await _firestore
@@ -13,11 +13,11 @@ class UserService {
           .doc(user.id)
           .set(user.toFirestore());
     } catch (e) {
-      throw 'Erreur lors de la création de l\'utilisateur: $e';
+      throw 'Error while creating user: $e';
     }
   }
 
-  // Récupérer un utilisateur par ID
+  // Get a user by ID
   Future<UserModel?> getUserById(String userId) async {
     try {
       final doc = await _firestore
@@ -30,11 +30,11 @@ class UserService {
       }
       return null;
     } catch (e) {
-      throw 'Erreur lors de la récupération de l\'utilisateur: $e';
+      throw 'Error while retrieving user: $e';
     }
   }
 
-  // Récupérer un utilisateur par email
+  // Get a user by email
   Future<UserModel?> getUserByEmail(String email) async {
     try {
       final querySnapshot = await _firestore
@@ -48,11 +48,11 @@ class UserService {
       }
       return null;
     } catch (e) {
-      throw 'Erreur lors de la recherche de l\'utilisateur: $e';
+      throw 'Error while searching for user: $e';
     }
   }
 
-  // Mettre à jour un utilisateur
+  // Update an entire user document
   Future<void> updateUser(UserModel user) async {
     try {
       await _firestore
@@ -60,11 +60,11 @@ class UserService {
           .doc(user.id)
           .update(user.toFirestore());
     } catch (e) {
-      throw 'Erreur lors de la mise à jour de l\'utilisateur: $e';
+      throw 'Error while updating user: $e';
     }
   }
 
-  // Mettre à jour des champs spécifiques
+  // Update specific fields of a user
   Future<void> updateUserFields(String userId, Map<String, dynamic> fields) async {
     try {
       await _firestore
@@ -72,23 +72,11 @@ class UserService {
           .doc(userId)
           .update(fields);
     } catch (e) {
-      throw 'Erreur lors de la mise à jour des champs: $e';
+      throw 'Error while updating fields: $e';
     }
   }
 
-  // Supprimer un utilisateur
-  Future<void> deleteUser(String userId) async {
-    try {
-      await _firestore
-          .collection(_collectionName)
-          .doc(userId)
-          .delete();
-    } catch (e) {
-      throw 'Erreur lors de la suppression de l\'utilisateur: $e';
-    }
-  }
-
-  // Stream pour écouter les changements d'un utilisateur
+  // Stream to listen to live changes of a user
   Stream<UserModel?> getUserStream(String userId) {
     return _firestore
         .collection(_collectionName)
@@ -102,7 +90,7 @@ class UserService {
     });
   }
 
-  // Récupérer tous les utilisateurs (pour admin)
+  // Get all users (for admin)
   Future<List<UserModel>> getAllUsers() async {
     try {
       final querySnapshot = await _firestore
@@ -113,11 +101,11 @@ class UserService {
           .map((doc) => UserModel.fromFirestore(doc))
           .toList();
     } catch (e) {
-      throw 'Erreur lors de la récupération des utilisateurs: $e';
+      throw 'Error while retrieving users: $e';
     }
   }
 
-  // Vérifier si un email existe déjà
+  // Check if an email already exists
   Future<bool> emailExists(String email) async {
     try {
       final querySnapshot = await _firestore
@@ -128,7 +116,7 @@ class UserService {
 
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      throw 'Erreur lors de la vérification de l\'email: $e';
+      throw 'Error while checking email: $e';
     }
   }
 }

@@ -51,6 +51,7 @@ dependencies:
 
   email_validator: ^3.0.0
   flutter_dotenv: ^6.0.0
+  google_fonts: ^6.3.2
   http: ^1.6.0
 
 dev_dependencies:

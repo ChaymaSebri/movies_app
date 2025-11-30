@@ -8,16 +8,16 @@ class AuthService {
   
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Obtenir l'utilisateur actuel
+  // Get the current user
   User? get currentUser => _auth.currentUser;
 
-  // Stream pour écouter les changements d'auth
+  // Stream to listen to auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Vérifier si l'utilisateur est connecté
+  // Check if user is logged in
   bool get isLoggedIn => currentUser != null;
 
-  // Inscription
+  // Sign up
   Future<UserCredential> signUp({
     required String email,
     required String password,
@@ -33,7 +33,7 @@ class AuthService {
     }
   }
 
-  // Connexion
+  // Sign in
   Future<UserCredential> signIn({
     required String email,
     required String password,
@@ -49,12 +49,12 @@ class AuthService {
     }
   }
 
-  // Déconnexion
+  // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // Réinitialiser le mot de passe
+  // Reset password
   Future<void> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -63,7 +63,7 @@ class AuthService {
     }
   }
 
-  // Supprimer le compte
+  // Delete account
   Future<void> deleteAccount() async {
     try {
       await currentUser?.delete();
@@ -72,29 +72,29 @@ class AuthService {
     }
   }
 
-  // Gestion des erreurs Firebase Auth
+  // Firebase Auth error handling
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
-        return 'Le mot de passe est trop faible.';
+        return 'The password is too weak.';
       case 'email-already-in-use':
-        return 'Cet email est déjà utilisé.';
+        return 'This email is already in use.';
       case 'invalid-email':
-        return 'Email invalide.';
+        return 'Invalid email.';
       case 'user-disabled':
-        return 'Ce compte a été désactivé.';
+        return 'This account has been disabled.';
       case 'user-not-found':
-        return 'Aucun utilisateur trouvé avec cet email.';
+        return 'No user found with this email.';
       case 'wrong-password':
-        return 'Mot de passe incorrect.';
+        return 'Incorrect password.';
       case 'too-many-requests':
-        return 'Trop de tentatives. Réessayez plus tard.';
+        return 'Too many attempts. Please try again later.';
       case 'operation-not-allowed':
-        return 'Opération non autorisée.';
+        return 'Operation not allowed.';
       case 'network-request-failed':
-        return 'Erreur de connexion. Vérifiez votre internet.';
+        return 'Connection error. Please check your internet.';
       default:
-        return 'Une erreur est survenue: ${e.message}';
+        return 'An error occurred: ${e.message}';
     }
   }
 }
