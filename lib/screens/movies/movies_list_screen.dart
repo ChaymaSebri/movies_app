@@ -1,31 +1,85 @@
+// lib/screens/movies_list_screen.dart
 import 'package:flutter/material.dart';
-import '../../services/movie_service.dart';
-import '../../services/playlist_service.dart';
-import '../../models/movie_model.dart';
+import 'package:movies_app/services/auth_service.dart';
+import 'package:movies_app/services/admin_service.dart';
+import 'package:movies_app/services/movie_service.dart';
+import 'package:movies_app/services/playlist_service.dart';
+import 'package:movies_app/services/user_service.dart';
+import 'package:movies_app/models/movie_model.dart';
+import 'package:movies_app/constants/app_routes.dart';
 import 'movie_detail_screen.dart';
 import 'favorites_screen.dart';
 
 class MoviesListScreen extends StatefulWidget {
-  final String currentUserId;
-  const MoviesListScreen({Key? key, required this.currentUserId}) : super(key: key);
+  const MoviesListScreen({Key? key}) : super(key: key);
 
   @override
   State<MoviesListScreen> createState() => _MoviesListScreenState();
 }
 
-class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerProviderStateMixin {
+class _MoviesListScreenState extends State<MoviesListScreen>
+    with SingleTickerProviderStateMixin {
+  final AuthService _authService = AuthService();
+  final AdminService _adminService = AdminService();
+  final UserService _userService = UserService();
   final MovieService _movieService = MovieService();
   final PlaylistService _playlistService = PlaylistService();
 
   late TabController _tabController;
   String _searchQuery = "";
+  String? _currentUserId;
+  String? userPhotoUrl;
+  bool _isLoadingUser = true;
+  bool _isAdmin = false;
 
   final List<String> _categories = ['Popular', 'Top Rated', 'Upcoming'];
+  
+  late Future<List<Movie>> _popularFuture;
+  late Future<List<Movie>> _topRatedFuture;
+  late Future<List<Movie>> _upcomingFuture;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _categories.length, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    
+    _popularFuture = _movieService.getPopularMovies();
+    _topRatedFuture = _movieService.getTopRatedMovies();
+    _upcomingFuture = _movieService.getUpcomingMovies();
+    
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final userId = _authService.currentUser?.uid;
+
+    if (userId == null) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
+      return;
+    }
+
+    try {
+      final user = await _userService.getUserById(userId);
+      final isAdmin = await _adminService.isCurrentUserAdmin();
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentUserId = userId;
+        userPhotoUrl = user?.photoUrl;
+        _isAdmin = isAdmin;
+        _isLoadingUser = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        userPhotoUrl = null;
+        _isLoadingUser = false;
+      });
+    }
   }
 
   @override
@@ -34,28 +88,81 @@ class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerPr
     super.dispose();
   }
 
+  Future<List<Movie>> _getFutureForCategory(String category) {
+    switch (category) {
+      case 'Popular':
+        return _popularFuture;
+      case 'Top Rated':
+        return _topRatedFuture;
+      case 'Upcoming':
+        return _upcomingFuture;
+      default:
+        return _popularFuture;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    if (_isLoadingUser) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
+      );
+    }
+
+    if (_currentUserId == null) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: Text(
+            "Authentication error",
+            style: theme.textTheme.bodyLarge,
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
         elevation: 0,
-        title: const Text(
-          "MOVIES",
-          style: TextStyle(color: Colors.purple, fontSize: 26, fontWeight: FontWeight.bold),
+        title: Text(
+          "MovieMates",
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: Colors.purple.withOpacity(0.2),
-              child: const CircleAvatar(
-                  radius: 20, backgroundImage: NetworkImage("https://picsum.photos/200")),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.2),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage:
+                      (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
+                          ? NetworkImage(userPhotoUrl!)
+                          : null,
+                  child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
+                      ? Icon(
+                          Icons.person,
+                          color: colorScheme.onSurface,
+                          size: 24,
+                        )
+                      : null,
+                ),
+              ),
             ),
           ),
         ],
@@ -70,13 +177,18 @@ class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerPr
                   decoration: InputDecoration(
                     hintText: "Search for a movie...",
                     hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFF1E1E1E),
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                 ),
@@ -89,7 +201,7 @@ class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerPr
                   Tab(text: "Upcoming"),
                 ],
                 labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurface.withOpacity(0.5),
+                unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
                 indicatorColor: colorScheme.primary,
                 indicatorWeight: 4,
               ),
@@ -104,40 +216,70 @@ class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerPr
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: colorScheme.surfaceContainerHighest,
         selectedItemColor: colorScheme.primary,
-        unselectedItemColor: colorScheme.onSurface.withOpacity(0.5),
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.5),
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      FavoritesScreen(currentUserId: widget.currentUserId)),
-            );
-          } else if (index == 2) {
-            Navigator.pushNamed(context, '/matching');
+            Navigator.pushNamed(context, AppRoutes.favorites);
+            return;
+          }
+
+          if (index == 2) {
+            Navigator.pushNamed(context, AppRoutes.matching);
+            return;
+          }
+
+          if (index == 3 && _isAdmin) {
+            Navigator.pushNamed(context, AppRoutes.adminDashboard);
+            return;
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favorites"),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: "Discover",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: "Matching",
+          ),
+          if (_isAdmin)
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: "Admin",
+            ),
         ],
       ),
     );
   }
 
   Widget _buildMovieGrid(String category) {
-    return StreamBuilder<List<Movie>>(
-      stream: _movieService.getMoviesByCategory(category),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final future = _getFutureForCategory(category);
+
+    return FutureBuilder<List<Movie>>(
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple));
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No movies found", style: TextStyle(color: Colors.white70)));
+          return Center(
+            child: Text(
+              "No movies found",
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          );
         }
 
         var movies = snapshot.data!;
@@ -156,7 +298,7 @@ class _MoviesListScreenState extends State<MoviesListScreen> with SingleTickerPr
           itemCount: movies.length,
           itemBuilder: (context, i) => MovieGridCard(
             movie: movies[i],
-            currentUserId: widget.currentUserId,
+            currentUserId: _currentUserId!,
             playlistService: _playlistService,
             movieService: _movieService,
           ),
@@ -198,13 +340,13 @@ class _MovieGridCardState extends State<MovieGridCard> {
 
   Future<void> _checkFavorite() async {
     try {
-      final fav =
-          await widget.playlistService.isFavorite(widget.currentUserId, widget.movie.id);
+      final fav = await widget.playlistService.isFavorite(widget.currentUserId, widget.movie.id);
       if (mounted) setState(() => isFavorite = fav);
     } catch (_) {}
   }
 
   void _toggleFavorite() async {
+    final theme = Theme.of(context);
     setState(() => isLoadingFavorite = true);
     try {
       if (isFavorite) {
@@ -215,8 +357,12 @@ class _MovieGridCardState extends State<MovieGridCard> {
       if (mounted) setState(() => isFavorite = !isFavorite);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Erreur favoris"), backgroundColor: Colors.purple));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Error updating favorites"),
+            backgroundColor: theme.colorScheme.primary,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => isLoadingFavorite = false);
@@ -239,24 +385,12 @@ class _MovieGridCardState extends State<MovieGridCard> {
       onExit: (_) => setState(() => isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () async {
-          try {
-            final fullMovie = await widget.movieService.getMovieDetails(widget.movie.id);
-            if (!mounted) return;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MovieDetailScreen(
-                  movie: fullMovie,
-                  currentUserId: widget.currentUserId,
-                  playlistService: widget.playlistService,
-                ),
-              ),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text("Erreur : $e")));
-          }
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.movieDetail,
+            arguments: {'movieId': widget.movie.id},
+          );
         },
         child: Stack(
           children: [
@@ -276,57 +410,100 @@ class _MovieGridCardState extends State<MovieGridCard> {
                       loadingBuilder: (_, child, progress) => progress == null
                           ? child
                           : Container(
-                              color: Colors.grey[800],
+                              color: colorScheme.surfaceContainerHighest,
                               height: 260,
-                              child: const Center(
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.purple)),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
                             ),
-                      errorBuilder: (_, __, ___) =>
-                          Container(height: 260, color: Colors.grey[850], child: const Icon(Icons.broken_image, color: Colors.grey, size: 60)),
+                      errorBuilder: (_, _, __) => Container(
+                        height: 260,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
+                          size: 60,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(widget.movie.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: isHovered ? Colors.purple : Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
-                Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  widget.movie.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isHovered
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  year,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
+            
+            // Rating badge
             Positioned(
               top: 8,
               right: 8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration:
-                    BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     Text(rating, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ),
+            
+            // Favorite button
             Positioned(
               bottom: 80,
               right: 8,
               child: IconButton(
                 iconSize: 32,
                 icon: isLoadingFavorite
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple))
-                    : Icon(isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isFavorite ? Colors.purple : Colors.white,
-                        shadows: const [Shadow(blurRadius: 12, color: Colors.black54)]),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isFavorite
+                            ? colorScheme.primary
+                            : colorScheme.onSurface,
+                        shadows: const [
+                          Shadow(blurRadius: 12, color: Colors.black54),
+                        ],
+                      ),
                 onPressed: isLoadingFavorite ? null : _toggleFavorite,
               ),
             ),
