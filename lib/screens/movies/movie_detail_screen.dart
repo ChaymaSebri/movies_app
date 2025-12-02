@@ -1,110 +1,40 @@
-// movie_detail_screen.dart
 import 'package:flutter/material.dart';
-import '../../../models/movie_model.dart';
-import '../../../services/playlist_service.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/movie_service.dart';
-import '../../../constants/app_routes.dart';
+import '../../models/movie_model.dart';
+import '../../services/playlist_service.dart';
 
 class MovieDetailScreen extends StatefulWidget {
-  // Only accept movieId - simpler and cleaner
-  final String? movieId;
+  final Movie movie;
+  final String currentUserId;
+  final PlaylistService playlistService;
   final VoidCallback? onFavoriteChanged;
 
-  const MovieDetailScreen({super.key, this.movieId, this.onFavoriteChanged});
+  const MovieDetailScreen({
+    Key? key,
+    required this.movie,
+    required this.currentUserId,
+    required this.playlistService,
+    this.onFavoriteChanged,
+  }) : super(key: key);
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  // Use singleton instances
-  final _authService = AuthService();
-  final _playlistService = PlaylistService();
-  final _movieService = MovieService();
-
   bool isFavorite = false;
   bool isLoadingFavorite = true;
-  String? _currentUserId;
-  bool _isLoadingUser = true;
-  Movie? _movie;
-  bool _isLoadingMovie = true;
-  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    await _loadCurrentUser();
-    if (_currentUserId != null) {
-      await _loadMovieDetails();
-      if (_movie != null) {
-        await _checkFavorite();
-      }
-    }
-  }
-
-  Future<void> _loadCurrentUser() async {
-    final userId = _authService.currentUser?.uid;
-
-    if (userId == null) {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _currentUserId = userId;
-        _isLoadingUser = false;
-      });
-    }
-  }
-
-  Future<void> _loadMovieDetails() async {
-    // Get movieId from widget or route arguments
-    final movieId =
-        widget.movieId ??
-        (ModalRoute.of(context)?.settings.arguments as Map?)?['movieId']
-            as String?;
-
-    if (movieId == null) {
-      setState(() {
-        _errorMessage = "Aucun ID de film fourni";
-        _isLoadingMovie = false;
-      });
-      return;
-    }
-
-    try {
-      final movie = await _movieService.getMovieDetails(movieId);
-      if (mounted) {
-        setState(() {
-          _movie = movie;
-          _isLoadingMovie = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = "Erreur lors du chargement du film";
-          _isLoadingMovie = false;
-        });
-      }
-    }
+    _checkFavorite();
   }
 
   Future<void> _checkFavorite() async {
-    if (_currentUserId == null || _movie == null) return;
-
     try {
-      final fav = await _playlistService.isFavorite(
-        _currentUserId!,
-        _movie!.id,
+      final fav = await widget.playlistService.isFavorite(
+        widget.currentUserId,
+        widget.movie.id,
       );
       if (mounted) {
         setState(() {
@@ -112,40 +42,45 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           isLoadingFavorite = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => isLoadingFavorite = false);
     }
   }
 
   void _toggleFavorite() async {
-    if (_currentUserId == null || _movie == null) return;
-
     setState(() => isLoadingFavorite = true);
+
     try {
       if (isFavorite) {
-        await _playlistService.removeFavorite(_currentUserId!, _movie!.id);
+        await widget.playlistService.removeFavorite(
+          widget.currentUserId,
+          widget.movie.id,
+        );
       } else {
-        await _playlistService.addFavorite(_currentUserId!, _movie!.id);
+        await widget.playlistService.addFavorite(
+          widget.currentUserId,
+          widget.movie.id,
+        );
       }
 
-      if (mounted) {
-        setState(() => isFavorite = !isFavorite);
-      }
-
+      if (mounted) setState(() => isFavorite = !isFavorite);
       widget.onFavoriteChanged?.call();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isFavorite ? "Ajouté aux favoris !" : "Retiré des favoris",
+              isFavorite
+                  ? "Ajouté aux favoris !"
+                  : "Retiré des favoris",
             ),
-            backgroundColor: isFavorite ? Colors.purple[700] : Colors.grey[800],
+            backgroundColor:
+                isFavorite ? Colors.purple[700] : Colors.grey[800],
             duration: const Duration(seconds: 2),
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -159,68 +94,36 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  // === BACKDROP LOGIC FROM YOUR FRIEND (KEEP THIS) ===
+  String _getBackdropUrl(Movie movie) {
+    if (movie.backdropUrl != null && movie.backdropUrl!.isNotEmpty) {
+      return movie.backdropUrl!;
+    }
+
+    final poster = movie.posterUrl;
+
+    if (poster.contains('cloudinary.com')) {
+      return poster.replaceAll(
+        '/upload/',
+        '/upload/w_1280,c_limit,q_auto,f_auto/',
+      );
+    } else if (poster.contains('image.tmdb.org') ||
+        poster.contains('themoviedb.org')) {
+      return poster.replaceAll(RegExp(r'w\d+'), 'original');
+    } else {
+      return poster;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Show loading while checking user or loading movie
-    if (_isLoadingUser || _isLoadingMovie) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.purple)),
-      );
-    }
-
-    // User not logged in (should not happen due to redirect)
-    if (_currentUserId == null) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Text(
-            "Erreur d'authentification",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-
-    // Error loading movie or movie not found
-    if (_movie == null || _errorMessage != null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Center(
-          child: Text(
-            _errorMessage ?? "Film introuvable",
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-          ),
-        ),
-      );
-    }
-
-    final movie = _movie!;
-    final String backdropUrl = movie.backdropUrl?.isNotEmpty == true
-        ? movie.backdropUrl!
-        : movie.posterUrl.replaceAll('w500', 'original');
-    final String finalBackdrop = backdropUrl.isNotEmpty
-        ? backdropUrl
-        : "https://picsum.photos/1280/720?blur=2";
-
+    final movie = widget.movie;
+    final finalBackdrop = _getBackdropUrl(movie);
     final year = movie.releaseDate?.year.toString() ?? "Inconnue";
-    final duration = movie.runtime != null
-        ? "${movie.runtime} min"
-        : "Durée inconnue";
-    final rating = movie.rating != null
-        ? movie.rating!.toStringAsFixed(1)
-        : "N/A";
+    final duration =
+        movie.runtime != null ? "${movie.runtime} min" : "Durée inconnue";
+    final rating =
+        movie.rating != null ? movie.rating!.toStringAsFixed(1) : "N/A";
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -240,7 +143,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // === BACKDROP ===
+            // Backdrop
             Container(
               height: 440,
               width: double.infinity,
@@ -285,36 +188,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Année + Durée
+                  // Year + Duration
                   Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
+                      const Icon(Icons.calendar_today_rounded,
+                          color: Colors.grey, size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        year,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
+                      Text(year,
+                          style:
+                              const TextStyle(color: Colors.grey, fontSize: 16)),
                       const SizedBox(width: 30),
-                      const Icon(
-                        Icons.access_time_rounded,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
+                      const Icon(Icons.access_time_rounded,
+                          color: Colors.grey, size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        duration,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
+                      Text(duration,
+                          style:
+                              const TextStyle(color: Colors.grey, fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -324,14 +213,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
-                      children: movie.genres
-                          .map((g) => _buildGenreChip(g))
-                          .toList(),
+                      children:
+                          movie.genres.map((g) => _buildGenreChip(g)).toList(),
                     ),
 
                   const SizedBox(height: 30),
 
-                  // Note
+                  // Rating
                   Row(
                     children: [
                       Container(
@@ -375,7 +263,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ),
                           Text(
                             "sur 10",
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                            style:
+                                TextStyle(color: Colors.grey, fontSize: 16),
                           ),
                         ],
                       ),
@@ -407,7 +296,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
                   const SizedBox(height: 60),
 
-                  // Bouton Favoris
+                  // Favorite Button
                   SizedBox(
                     width: double.infinity,
                     height: 60,
@@ -424,9 +313,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                         elevation: 8,
-                        shadowColor: Colors.purple.withAlpha(
-                          (0.4 * 255).round(),
-                        ),
+                        shadowColor:
+                            Colors.purple.withAlpha((0.4 * 255).round()),
                       ),
                       child: isLoadingFavorite
                           ? const SizedBox(

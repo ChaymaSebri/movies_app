@@ -8,7 +8,8 @@ import 'package:movies_app/constants/app_routes.dart';
 import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  final String currentUserId;
+  const FavoritesScreen({Key? key, required this.currentUserId}) : super(key: key);
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -20,79 +21,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
 
-  late Future<List<Movie>> _favoritesFuture;
-  String? _currentUserId;
-  bool _isLoadingUser = true;
   bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentUser();
+    _loadAdminStatus();
   }
 
-  Future<void> _loadCurrentUser() async {
-    final userId = _authService.currentUser?.uid;
-
-    if (userId == null) {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      }
-      return;
-    }
-
+  Future<void> _loadAdminStatus() async {
     try {
-      final isAdmin = await _adminService.isCurrentUserAdmin();
-
-      setState(() {
-        _currentUserId = userId;
-        _isAdmin = isAdmin;
-        _isLoadingUser = false;
-      });
-
-      _loadFavorites();
-    } catch (_) {
-      setState(() {
-        _currentUserId = userId;
-        _isLoadingUser = false;
-      });
-      _loadFavorites();
-    }
+      _isAdmin = await _adminService.isCurrentUserAdmin();
+      setState(() {});
+    } catch (_) {}
   }
-
-  void _loadFavorites() {
-    if (_currentUserId != null) {
-      _favoritesFuture = _playlistService.getFavoriteMovies(_currentUserId!);
-    }
-  }
-
-  void _refresh() => setState(_loadFavorites);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (_isLoadingUser) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
-      );
-    }
-
-    if (_currentUserId == null) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: Center(
-          child: Text("Authentication error", style: theme.textTheme.bodyLarge),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
+
       appBar: AppBar(
         backgroundColor: colorScheme.surface,
         elevation: 0,
@@ -102,8 +53,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         title: Text("My Playlist"),
       ),
-      body: FutureBuilder<List<Movie>>(
-        future: _favoritesFuture,
+
+      body: StreamBuilder<List<Movie>>(
+        stream: _playlistService.getFavoriteMoviesStream(widget.currentUserId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -130,36 +82,32 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final movie = favorites[index];
               return FavoriteMovieCard(
                 movie: movie,
-                currentUserId: _currentUserId!,
+                currentUserId: widget.currentUserId,
                 playlistService: _playlistService,
                 movieService: _movieService,
-                onRemoved: _refresh,
-                onFavoriteChanged: _refresh,
+                onRemoved: () => setState(() {}),
+                onFavoriteChanged: () => setState(() {}),
               );
             },
           );
         },
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: colorScheme.surfaceContainerHighest,
         selectedItemColor: colorScheme.primary,
-        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.5),
+        unselectedItemColor: colorScheme.onSurface.withOpacity(0.5),
         currentIndex: 1,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 0) {
             Navigator.pop(context);
-            return;
           }
-
           if (index == 2) {
             Navigator.pushNamed(context, AppRoutes.matching);
-            return;
           }
-
           if (index == 3 && _isAdmin) {
             Navigator.pushNamed(context, AppRoutes.adminDashboard);
-            return;
           }
         },
         items: [
@@ -197,7 +145,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.2),
+              color: colorScheme.primary.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -217,7 +165,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Text(
             "Add movies with the heart icon",
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 40),
@@ -269,23 +217,28 @@ class FavoriteMovieCard extends StatefulWidget {
 class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
   bool isHovered = false;
 
-  String get posterUrl => widget.movie.posterUrl.isNotEmpty
-      ? widget.movie.posterUrl
-      : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  String get posterUrl {
+    final url = widget.movie.posterUrl;
+    if (url.contains('cloudinary.com')) {
+      return url.replaceAll('/upload/', '/upload/w_500,c_limit,q_auto,f_auto/');
+    }
+    return url.isNotEmpty ? url : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  }
 
   void _removeFromFavorites() async {
-    final theme = Theme.of(context);
     await widget.playlistService.removeFavorite(
       widget.currentUserId,
       widget.movie.id,
     );
+
     widget.onRemoved();
     widget.onFavoriteChanged();
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("${widget.movie.title} removed from favorites"),
-          backgroundColor: theme.colorScheme.primary,
+          backgroundColor: Colors.purple[700],
         ),
       );
     }
@@ -293,8 +246,6 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final year = widget.movie.releaseDate?.year.toString() ?? "N/A";
     final rating = widget.movie.rating?.toStringAsFixed(1) ?? "N/A";
 
@@ -303,13 +254,26 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
       onExit: (_) => setState(() => isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MovieDetailScreen(movieId: widget.movie.id),
-            ),
-          );
+        onTap: () async {
+          try {
+            final fullMovie = await widget.movieService.getMovieDetails(widget.movie.id);
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MovieDetailScreen(
+                  movie: fullMovie,
+                  currentUserId: widget.currentUserId,
+                  playlistService: widget.playlistService,
+                  onFavoriteChanged: widget.onFavoriteChanged,
+                ),
+              ),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Erreur : $e")),
+            );
+          }
         },
         child: Stack(
           children: [
@@ -326,27 +290,6 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                       height: 260,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      loadingBuilder: (_, child, progress) => progress == null
-                          ? child
-                          : Container(
-                              color: colorScheme.surfaceContainerHighest,
-                              height: 260,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                      errorBuilder: (_, _, _) => Container(
-                        height: 260,
-                        color: colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: colorScheme.onSurface.withValues(alpha: 0.3),
-                          size: 60,
-                        ),
-                      ),
                     ),
                   ),
                 ),
@@ -355,25 +298,19 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                   widget.movie.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isHovered
-                        ? colorScheme.primary
-                        : colorScheme.onSurface,
+                  style: TextStyle(
+                    color: isHovered ? Colors.purple : Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 Text(
                   year,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],
             ),
 
-            // Rating badge
             Positioned(
               top: 8,
               right: 8,
@@ -385,11 +322,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Colors.amber,
-                      size: 18,
-                    ),
+                    const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
                     const SizedBox(width: 4),
                     Text(
                       rating,
@@ -403,19 +336,11 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
               ),
             ),
 
-            // Remove button
             Positioned(
               bottom: 80,
               right: 8,
               child: IconButton(
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: colorScheme.onSurface,
-                  size: 32,
-                  shadows: const [
-                    Shadow(blurRadius: 12, color: Colors.black54),
-                  ],
-                ),
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32),
                 onPressed: _removeFromFavorites,
               ),
             ),

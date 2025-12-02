@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AutoImportSettings">
-    <option name="autoReloadType" value="NONE" />
+    <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="acbc5754-b44f-4462-a80c-db3d170b3496" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/config/app_router.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/config/app_theme.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/config/cloudinary_config.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/constants/app_colors.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/constants/app_routes.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/auth_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/cloudinary_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/services/user_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/utils/image_picker_helper.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/auth/controllers/auth_controller.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/auth/models/user_model.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/profile/views/screens/profile_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Runner/Info.plist" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Runner/Info.plist" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/age_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/age_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/email_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/email_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/name_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/name_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/utils/password_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/validators/password_validator.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/screens/login_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/screens/sign_up_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/screens/sign_up_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/widgets/account_prompt_row.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/widgets/account_prompt_row.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/features/auth/vew/widgets/divider_with_text.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/auth/views/widgets/divider_with_text.dart" afterDir="false" />
+    <list default="true" id="3e009d66-5d49-4ef1-b08a-726becee426b" name="Changes" comment="Merge branch 'main' of https://github.com/ChaymaSebri/movies_app into feature-movie&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;lib/main.dart&#10;#&#9;lib/screens/movies/favorites_screen.dart&#10;#&#9;lib/screens/movies/movie_detail_screen.dart&#10;#&#9;lib/screens/movies/movies_list_screen.dart&#10;#&#9;lib/services/cloudinary_service.dart&#10;#&#9;lib/services/movie_service.dart&#10;#&#9;lib/services/playlist_service.dart">
+      <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/screens/auth/profile_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/config/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/config/app_router.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/config/app_theme.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/config/app_theme.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/constants/api_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/config/api_constants.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/constants/app_colors.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_colors.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/constants/app_routes.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_routes.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/services/auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/auth_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/services/cloudinary_service.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/services/user_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/user_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/image_picker_helper.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils/image_picker_helper.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/validators/age_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils/validators/age_validator.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/validators/email_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils/validators/email_validator.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/validators/name_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils/validators/name_validator.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/validators/password_validator.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils/validators/password_validator.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/controllers/auth_controller.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/models/user_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/user_model.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/views/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/auth/login_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/views/screens/sign_up_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/auth/sign_up_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/views/widgets/account_prompt_row.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/account_prompt_row.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/auth/views/widgets/divider_with_text.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/divider_with_text.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/profile/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/profile/views/screens/profile_screen.dart" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/favorites_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies/favorites_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies/movie_detail_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movies_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies/movies_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/api_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -43,90 +43,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 2
-}</component>
-  <component name="ProjectId" id="35keIXAPeMIuP9atk859tQaDwuW" />
-  <component name="ProjectViewState">
-    <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showLibraryContents" value="true" />
-  </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Dart Command Line App.test_model.dart.executor&quot;: &quot;Debug&quot;,
-    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;Merging feature-movie&quot;,
-    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;AndroidSdkUpdater&quot;,
-    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
-  }
-}</component>
-  <component name="RunManager" selected="Flutter.main.dart">
-    <configuration name="test_model.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
-      <option name="filePath" value="$PROJECT_DIR$/lib/test_model.dart" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
-      <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Dart Command Line App.test_model.dart" />
-      </list>
-    </recent_temporary>
-  </component>
   <component name="TaskManager">
-    <task active="true" id="Default" summary="Default task">
-      <changelist id="acbc5754-b44f-4462-a80c-db3d170b3496" name="Changes" comment="" />
-      <created>1763658430830</created>
-      <option name="number" value="Default" />
-      <option name="presentableId" value="Default" />
-      <updated>1763658430830</updated>
-    </task>
     <servers />
-  </component>
-  <component name="UnknownFeatures">
-    <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/main.dart</url>
-          <line>41</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/screens/movie_detail_screen.dart</url>
-          <line>284</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>
