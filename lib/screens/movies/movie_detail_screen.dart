@@ -1,35 +1,31 @@
-// movie_detail_screen.dart
+// lib/screens/movie_detail_screen.dart
 import 'package:flutter/material.dart';
-import '../../../models/movie_model.dart';
-import '../../../services/playlist_service.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/movie_service.dart';
-import '../../../constants/app_routes.dart';
+import 'package:movies_app/models/movie_model.dart';
+import 'package:movies_app/services/movie_service.dart';
+import 'package:movies_app/services/playlist_service.dart';
+import 'package:movies_app/services/auth_service.dart';
+import 'package:movies_app/constants/app_routes.dart';
 
 class MovieDetailScreen extends StatefulWidget {
-  // Only accept movieId - simpler and cleaner
-  final String? movieId;
-  final VoidCallback? onFavoriteChanged;
-
-  const MovieDetailScreen({super.key, this.movieId, this.onFavoriteChanged});
+  const MovieDetailScreen({Key? key}) : super(key: key);
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  // Use singleton instances
-  final _authService = AuthService();
-  final _playlistService = PlaylistService();
-  final _movieService = MovieService();
+  final AuthService _authService = AuthService();
+  final MovieService _movieService = MovieService();
+  final PlaylistService _playlistService = PlaylistService();
+
+  String? _currentUserId;
+  Movie? _movie;
+  bool _isLoadingUser = true;
+  bool _isLoadingMovie = true;
+  String? _errorMessage;
 
   bool isFavorite = false;
   bool isLoadingFavorite = true;
-  String? _currentUserId;
-  bool _isLoadingUser = true;
-  Movie? _movie;
-  bool _isLoadingMovie = true;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -49,14 +45,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Future<void> _loadCurrentUser() async {
     final userId = _authService.currentUser?.uid;
-
     if (userId == null) {
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
       return;
     }
-
     if (mounted) {
       setState(() {
         _currentUserId = userId;
@@ -66,11 +60,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _loadMovieDetails() async {
-    // Get movieId from widget or route arguments
-    final movieId =
-        widget.movieId ??
-        (ModalRoute.of(context)?.settings.arguments as Map?)?['movieId']
-            as String?;
+    // Get movieId from route arguments
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final movieId = args?['movieId'] as String?;
 
     if (movieId == null) {
       setState(() {
@@ -99,7 +91,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _checkFavorite() async {
-    if (_currentUserId == null || _movie == null) return;
+    if (_movie == null || _currentUserId == null) return;
 
     try {
       final fav = await _playlistService.isFavorite(
@@ -118,7 +110,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   void _toggleFavorite() async {
-    if (_currentUserId == null || _movie == null) return;
+    if (_movie == null || _currentUserId == null) return;
 
     setState(() => isLoadingFavorite = true);
     try {
@@ -127,12 +119,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       } else {
         await _playlistService.addFavorite(_currentUserId!, _movie!.id);
       }
-
-      if (mounted) {
-        setState(() => isFavorite = !isFavorite);
-      }
-
-      widget.onFavoriteChanged?.call();
+      if (mounted) setState(() => isFavorite = !isFavorite);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -207,20 +194,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
 
     final movie = _movie!;
-    final String backdropUrl = movie.backdropUrl?.isNotEmpty == true
-        ? movie.backdropUrl!
-        : movie.posterUrl.replaceAll('w500', 'original');
-    final String finalBackdrop = backdropUrl.isNotEmpty
-        ? backdropUrl
-        : "https://picsum.photos/1280/720?blur=2";
 
+    // LOGIQUE BACKDROP PARFAITE (TMDB + CLOUDINARY)
+    String getBackdropUrl() {
+      // 1. Si on a un vrai backdrop → on le prend
+      if (movie.backdropUrl != null && movie.backdropUrl!.isNotEmpty) {
+        return movie.backdropUrl!;
+      }
+      // 2. Sinon, on génère un grand poster selon la source
+      final poster = movie.posterUrl;
+      if (poster.contains('cloudinary.com')) {
+        // Image Cloudinary → on agrandit + optimisation
+        return poster.replaceAll('/upload/', '/upload/w_1280,c_limit,q_auto,f_auto/');
+      } else if (poster.contains('image.tmdb.org') || poster.contains('themoviedb.org')) {
+        // TMDB → on passe en original
+        return poster.replaceAll(RegExp(r'w\d+'), 'original');
+      } else {
+        // Fallback
+        return poster;
+      }
+    }
+
+    final String finalBackdrop = getBackdropUrl();
     final year = movie.releaseDate?.year.toString() ?? "Inconnue";
-    final duration = movie.runtime != null
-        ? "${movie.runtime} min"
-        : "Durée inconnue";
-    final rating = movie.rating != null
-        ? movie.rating!.toStringAsFixed(1)
-        : "N/A";
+    final duration = movie.runtime != null ? "${movie.runtime} min" : "Durée inconnue";
+    final rating = movie.rating != null ? movie.rating!.toStringAsFixed(1) : "N/A";
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -279,7 +277,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 ],
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -318,7 +315,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-
                   // Genres
                   if (movie.genres.isNotEmpty)
                     Wrap(
@@ -328,9 +324,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           .map((g) => _buildGenreChip(g))
                           .toList(),
                     ),
-
                   const SizedBox(height: 30),
-
                   // Note
                   Row(
                     children: [
@@ -381,9 +375,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 40),
-
                   // Synopsis
                   const Text(
                     "Synopsis",
@@ -404,9 +396,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       height: 1.7,
                     ),
                   ),
-
                   const SizedBox(height: 60),
-
                   // Bouton Favoris
                   SizedBox(
                     width: double.infinity,
@@ -463,7 +453,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
                 ],
               ),

@@ -1,3 +1,4 @@
+// lib/screens/favorites_screen.dart
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/playlist_service.dart';
 import 'package:movies_app/services/movie_service.dart';
@@ -5,10 +6,9 @@ import 'package:movies_app/services/auth_service.dart';
 import 'package:movies_app/services/admin_service.dart';
 import 'package:movies_app/models/movie_model.dart';
 import 'package:movies_app/constants/app_routes.dart';
-import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  const FavoritesScreen({Key? key}) : super(key: key);
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -20,7 +20,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
 
-  late Future<List<Movie>> _favoritesFuture;
   String? _currentUserId;
   bool _isLoadingUser = true;
   bool _isAdmin = false;
@@ -44,29 +43,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     try {
       final isAdmin = await _adminService.isCurrentUserAdmin();
 
-      setState(() {
-        _currentUserId = userId;
-        _isAdmin = isAdmin;
-        _isLoadingUser = false;
-      });
-
-      _loadFavorites();
+      if (mounted) {
+        setState(() {
+          _currentUserId = userId;
+          _isAdmin = isAdmin;
+          _isLoadingUser = false;
+        });
+      }
     } catch (_) {
-      setState(() {
-        _currentUserId = userId;
-        _isLoadingUser = false;
-      });
-      _loadFavorites();
+      if (mounted) {
+        setState(() {
+          _currentUserId = userId;
+          _isLoadingUser = false;
+        });
+      }
     }
   }
-
-  void _loadFavorites() {
-    if (_currentUserId != null) {
-      _favoritesFuture = _playlistService.getFavoriteMovies(_currentUserId!);
-    }
-  }
-
-  void _refresh() => setState(_loadFavorites);
 
   @override
   Widget build(BuildContext context) {
@@ -100,10 +92,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text("My Playlist"),
+        title: Text(
+          "My Playlist",
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      body: FutureBuilder<List<Movie>>(
-        future: _favoritesFuture,
+      body: StreamBuilder<List<Movie>>(
+        stream: _playlistService.getFavoriteMoviesStream(_currentUserId!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -133,8 +131,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 currentUserId: _currentUserId!,
                 playlistService: _playlistService,
                 movieService: _movieService,
-                onRemoved: _refresh,
-                onFavoriteChanged: _refresh,
+                onRemoved: () => setState(() {}),
               );
             },
           );
@@ -250,17 +247,15 @@ class FavoriteMovieCard extends StatefulWidget {
   final PlaylistService playlistService;
   final MovieService movieService;
   final VoidCallback onRemoved;
-  final VoidCallback onFavoriteChanged;
 
   const FavoriteMovieCard({
-    super.key,
+    Key? key,
     required this.movie,
     required this.currentUserId,
     required this.playlistService,
     required this.movieService,
     required this.onRemoved,
-    required this.onFavoriteChanged,
-  });
+  }) : super(key: key);
 
   @override
   State<FavoriteMovieCard> createState() => _FavoriteMovieCardState();
@@ -269,9 +264,13 @@ class FavoriteMovieCard extends StatefulWidget {
 class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
   bool isHovered = false;
 
-  String get posterUrl => widget.movie.posterUrl.isNotEmpty
-      ? widget.movie.posterUrl
-      : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  String get posterUrl {
+    final url = widget.movie.posterUrl;
+    if (url.contains('cloudinary.com')) {
+      return url.replaceAll('/upload/', '/upload/w_500,c_limit,q_auto,f_auto/');
+    }
+    return url.isNotEmpty ? url : "https://picsum.photos/500/750?random=${widget.movie.id}";
+  }
 
   void _removeFromFavorites() async {
     final theme = Theme.of(context);
@@ -280,7 +279,6 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
       widget.movie.id,
     );
     widget.onRemoved();
-    widget.onFavoriteChanged();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -304,11 +302,10 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => MovieDetailScreen(movieId: widget.movie.id),
-            ),
+            AppRoutes.movieDetail,
+            arguments: {'movieId': widget.movie.id},
           );
         },
         child: Stack(
@@ -338,7 +335,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                                 ),
                               ),
                             ),
-                      errorBuilder: (_, _, _) => Container(
+                      errorBuilder: (_, _, __) => Container(
                         height: 260,
                         color: colorScheme.surfaceContainerHighest,
                         child: Icon(
