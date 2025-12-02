@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:movies_app/services/playlist_service.dart';
-import 'package:movies_app/services/movie_service.dart';
-import 'package:movies_app/services/auth_service.dart';
-import 'package:movies_app/services/admin_service.dart';
-import 'package:movies_app/models/movie_model.dart';
-import 'package:movies_app/constants/app_routes.dart';
+import '../../services/playlist_service.dart';
+import '../../services/movie_service.dart';
+import '../../models/movie_model.dart';
 import 'movie_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final String currentUserId;
+
   const FavoritesScreen({Key? key, required this.currentUserId}) : super(key: key);
 
   @override
@@ -16,58 +14,32 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  final AuthService _authService = AuthService();
-  final AdminService _adminService = AdminService();
   final PlaylistService _playlistService = PlaylistService();
   final MovieService _movieService = MovieService();
 
-  bool _isAdmin = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAdminStatus();
-  }
-
-  Future<void> _loadAdminStatus() async {
-    try {
-      _isAdmin = await _adminService.isCurrentUserAdmin();
-      setState(() {});
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: const Color(0xFF121212),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text("My Playlist"),
+        title: const Text("My Playlist"),
       ),
-
       body: StreamBuilder<List<Movie>>(
         stream: _playlistService.getFavoriteMoviesStream(widget.currentUserId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: colorScheme.primary),
-            );
+            return const Center(child: CircularProgressIndicator(color: Colors.purple));
           }
 
           final favorites = snapshot.data ?? [];
 
-          if (favorites.isEmpty) {
-            return _buildEmptyState();
-          }
+          if (favorites.isEmpty) return _buildEmptyState(context);
 
           return GridView.builder(
             padding: const EdgeInsets.all(12),
@@ -92,51 +64,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         },
       ),
-
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: colorScheme.surfaceContainerHighest,
-        selectedItemColor: colorScheme.primary,
-        unselectedItemColor: colorScheme.onSurface.withOpacity(0.5),
+        backgroundColor: const Color(0xFF1E1E1E),
+        selectedItemColor: Colors.purple,
+        unselectedItemColor: Colors.grey,
         currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pop(context);
-          }
-          if (index == 2) {
-            Navigator.pushNamed(context, AppRoutes.matching);
-          }
-          if (index == 3 && _isAdmin) {
-            Navigator.pushNamed(context, AppRoutes.adminDashboard);
-          }
+          if (index == 0) Navigator.pop(context); // Discover
+          // Add actions for index 2 (Matching) if needed
         },
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: "Discover",
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Favorites",
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Matching",
-          ),
-          if (_isAdmin)
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: "Admin",
-            ),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favorites"),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -145,39 +91,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.2),
+              color: Colors.purple.withAlpha(50),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.favorite_border,
-              size: 48,
-              color: colorScheme.primary,
-            ),
+            child: const Icon(Icons.favorite_border, size: 48, color: Colors.purple),
           ),
           const SizedBox(height: 30),
-          Text(
+          const Text(
             "No favorites yet",
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             "Add movies with the heart icon",
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
           const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
             child: const Text(
               "Discover Movies",
@@ -189,8 +125,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 }
-
-// ======================== FAVORITE MOVIE CARD ========================
 
 class FavoriteMovieCard extends StatefulWidget {
   final Movie movie;
@@ -226,21 +160,14 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
   }
 
   void _removeFromFavorites() async {
-    await widget.playlistService.removeFavorite(
-      widget.currentUserId,
-      widget.movie.id,
-    );
-
+    await widget.playlistService.removeFavorite(widget.currentUserId, widget.movie.id);
     widget.onRemoved();
     widget.onFavoriteChanged();
-
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("${widget.movie.title} removed from favorites"),
-          backgroundColor: Colors.purple[700],
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("${widget.movie.title} removed from favorites"),
+        backgroundColor: Colors.purple[700],
+      ));
     }
   }
 
@@ -270,9 +197,7 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
               ),
             );
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Erreur : $e")),
-            );
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
           }
         },
         child: Stack(
@@ -290,6 +215,9 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                       height: 260,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) =>
+                          progress == null ? child : Container(color: Colors.grey[800], height: 260, child: const Center(child: CircularProgressIndicator(color: Colors.purple))),
+                      errorBuilder: (_, __, ___) => Container(height: 260, color: Colors.grey[850], child: const Icon(Icons.broken_image, color: Colors.grey, size: 60)),
                     ),
                   ),
                 ),
@@ -298,49 +226,31 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
                   widget.movie.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isHovered ? Colors.purple : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: isHovered ? Colors.purple : Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-                Text(
-                  year,
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
+                Text(year, style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
-
             Positioned(
               top: 8,
               right: 8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
                 child: Row(
                   children: [
                     const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
                     const SizedBox(width: 4),
-                    Text(
-                      rating,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(rating, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ),
-
             Positioned(
               bottom: 80,
               right: 8,
               child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32),
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32, shadows: [Shadow(blurRadius: 12, color: Colors.black54)]),
                 onPressed: _removeFromFavorites,
               ),
             ),
