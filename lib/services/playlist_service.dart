@@ -1,7 +1,7 @@
 // lib/services/playlist_service.dart
 // VERSION ABSOLUMENT PARFAITE — Garde ça pour toujours
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/favorite_model.dart';
+import 'package:flutter/foundation.dart';
 import '../models/movie_model.dart';
 import 'movie_service.dart';
 
@@ -20,19 +20,37 @@ class PlaylistService {
 
   // ====================== AJOUTER FAVORI ======================
   Future<void> addFavorite(String userId, String movieId) async {
-    await _userFavoritesRef(userId).doc(movieId).set({
-      'addedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      await _userFavoritesRef(userId).doc(movieId).set({
+        'addedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)); // merge: true → plus safe
+    } catch (e) {
+      debugPrint("Error adding favorite: $e");
+      rethrow;
+    }
   }
 
   // ====================== RETIRER FAVORI ======================
   Future<void> removeFavorite(String userId, String movieId) async {
-    await _userFavoritesRef(userId).doc(movieId).delete();
+    try {
+      await _userFavoritesRef(userId).doc(movieId).delete();
+    } catch (e) {
+      debugPrint("Error removing favorite: $e");
+      rethrow;
+    }
   }
 
   // ====================== EST FAVORI ? ======================
   Future<bool> isFavorite(String userId, String movieId) async {
-    return await _userFavoritesRef(userId).doc(movieId).get().then((doc) => doc.exists);
+    try {
+      return await _userFavoritesRef(userId)
+          .doc(movieId)
+          .get()
+          .then((doc) => doc.exists);
+    } catch (e) {
+      debugPrint("Error checking favorite: $e");
+      return false;
+    }
   }
 
   // ====================== STREAM TEMPS RÉEL (MAGIQUE) ======================
@@ -43,8 +61,13 @@ class PlaylistService {
         .asyncMap((snapshot) async {
       final List<Movie> movies = [];
       for (final doc in snapshot.docs) {
-        final movie = await _movieService.getMovieById(doc.id);
-        if (movie != null) movies.add(movie);
+        try {
+          final movie = await _movieService.getMovieById(doc.id);
+          if (movie != null) movies.add(movie);
+        } catch (e) {
+          debugPrint("Error loading movie ${doc.id}: $e");
+          // Continue loading other movies
+        }
       }
       return movies;
     });
@@ -52,18 +75,36 @@ class PlaylistService {
 
   // ====================== FUTURE (compatibilité) ======================
   Future<List<Movie>> getFavoriteMovies(String userId) async {
-    final snapshot = await _userFavoritesRef(userId).get();
-    final List<Movie> movies = [];
-    for (final doc in snapshot.docs) {
-      final movie = await _movieService.getMovieById(doc.id);
-      if (movie != null) movies.add(movie);
+    try {
+      final snapshot = await _userFavoritesRef(userId)
+          .orderBy('addedAt', descending: true)
+          .get();
+      final List<Movie> movies = [];
+      
+      for (final doc in snapshot.docs) {
+        try {
+          final movie = await _movieService.getMovieById(doc.id);
+          if (movie != null) movies.add(movie);
+        } catch (e) {
+          debugPrint("Error loading movie ${doc.id}: $e");
+          // Continue loading other movies
+        }
+      }
+      return movies;
+    } catch (e) {
+      debugPrint("Error getting favorite movies: $e");
+      return [];
     }
-    return movies;
   }
 
   // ====================== IDS SEULEMENT ======================
   Future<List<String>> getFavoriteMovieIds(String userId) async {
-    final snapshot = await _userFavoritesRef(userId).get();
-    return snapshot.docs.map((doc) => doc.id).toList();
+    try {
+      final snapshot = await _userFavoritesRef(userId).get();
+      return snapshot.docs.map((doc) => doc.id).toList();
+    } catch (e) {
+      debugPrint("Error getting favorite movie IDs: $e");
+      return [];
+    }
   }
 }
