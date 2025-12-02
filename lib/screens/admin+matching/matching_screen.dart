@@ -42,52 +42,111 @@ class _MatchingPageState extends State<MatchingPage> {
     } catch (e) {
       setState(() => _loading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Matching')),
+      appBar: AppBar(
+        title: const Text('Matches'),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _matches.isEmpty
-          ? const Center(child: Text('Aucun match trouvé'))
-          : ListView.separated(
-              itemCount: _matches.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final match = _matches[index];
-                final userData =
-                    match['userData'] as Map<String, dynamic>? ?? {};
-                final name =
-                    '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
-                        .trim();
-                final percent =
-                    (match['matchPercentage'] as double?)?.toStringAsFixed(1) ??
-                    '0.0';
-
-                return ListTile(
-                  title: Text(
-                    name.isEmpty
-                        ? (userData['email'] ?? match['userId'])
-                        : name,
+              ? Center(
+                  child: Text(
+                    'No matches found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  subtitle: Text('Correspondance: $percent%'),
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.matchDetail,
-                      arguments: match,
+                )
+              : ListView.separated(
+                  itemCount: _matches.length,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final match = _matches[index];
+                    final userData =
+                        match['userData'] as Map<String, dynamic>? ?? {};
+
+                    final name =
+                        '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+                            .trim();
+
+                    final percent =
+                        (match['matchPercentage'] as double?)
+                                ?.toStringAsFixed(1) ??
+                            '0.0';
+
+                    return ListTile(
+                      title: Text(
+                        name.isEmpty
+                            ? (userData['email'] ?? match['userId'])
+                            : name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Match: $percent%',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.matchDetail,
+                          arguments: match,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.5),
+        currentIndex: 2, // Matching tab is selected
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/movies');
+            return;
+          }
+
+          if (index == 1) {
+            Navigator.pushReplacementNamed(context, '/favorites');
+            return;
+          }
+
+          // index == 2 is already selected (Matching)
+
+          if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/admin-dashboard');
+            return;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matches"),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Admin"),
+        ],
+      ),
     );
   }
 }

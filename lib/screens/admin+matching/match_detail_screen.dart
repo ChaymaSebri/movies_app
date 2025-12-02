@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/movie_service.dart';
 
-class MatchDetailPage extends StatefulWidget {
+class MatchDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? data;
 
-  const MatchDetailPage({super.key, this.data});
+  const MatchDetailScreen({super.key, this.data});
 
   @override
-  State<MatchDetailPage> createState() => _MatchDetailPageState();
+  State<MatchDetailScreen> createState() => _MatchDetailScreenState();
 }
 
-class _MatchDetailPageState extends State<MatchDetailPage> {
+class _MatchDetailScreenState extends State<MatchDetailScreen> {
   final MovieService _movieService = MovieService();
 
   final Map<String, String> _movieTitles = {};
@@ -72,10 +72,10 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Text('Correspondance: $matchPercentage%'),
+            Text('Match Percentage: $matchPercentage%'),
             const SizedBox(height: 12),
             const Text(
-              'Films en commun:',
+              'Common movies:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -83,7 +83,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : commonMovies.isEmpty
-                  ? const Text('Aucun film en commun')
+                  ? const Text('No common movies found.')
                   : ListView.separated(
                       itemCount: commonMovies.length,
                       separatorBuilder: (context, index) => const Divider(),

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/admin_service.dart';
 
@@ -234,7 +233,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pop(context); // Go back to Discover
+            Navigator.pushReplacementNamed(context, '/movies');
             return;
           }
 
@@ -256,7 +255,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             icon: Icon(Icons.favorite),
             label: "Favorites",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matches"),
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Admin"),
         ],
       ),

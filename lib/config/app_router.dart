@@ -7,7 +7,6 @@ import 'package:movies_app/screens/auth/profile_screen.dart';
 import 'package:movies_app/screens/auth/edit_profile_screen.dart';
 import 'package:movies_app/screens/auth/reset_password_screen.dart';
 
-
 import 'package:movies_app/screens/movies/movies_list_screen.dart';
 import 'package:movies_app/screens/movies/movie_detail_screen.dart';
 import 'package:movies_app/screens/movies/favorites_screen.dart';
@@ -35,7 +34,7 @@ class AppRouter {
       AppRoutes.matchDetail: (context) {
         final args =
             ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-        return MatchDetailPage(data: args);
+        return MatchDetailScreen(data: args);
       },
     };
   }
