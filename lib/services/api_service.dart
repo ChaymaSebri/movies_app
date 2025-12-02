@@ -1,7 +1,7 @@
 // services/api_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../constants/api_constants.dart';
+import '../config/api_constants.dart';
 
 class ApiService {
   final String apiKey = ApiConstants.apiKey;

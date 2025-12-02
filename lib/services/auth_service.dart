@@ -1,6 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
+  // Singleton pattern
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+  
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Obtenir l'utilisateur actuel

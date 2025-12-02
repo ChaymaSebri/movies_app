@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:movies_app/core/constants/app_routes.dart';
-import 'package:movies_app/features/auth/controllers/auth_controller.dart';
-import '../../../../core/utils/validators/email_validator.dart';
-import '../../../../core/utils/validators/password_validator.dart';
-import '../widgets/account_prompt_row.dart';
-import '../widgets/divider_with_text.dart';
+import 'package:movies_app/constants/app_routes.dart';
+import 'package:movies_app/services/auth_service.dart';
+import 'package:movies_app/services/user_service.dart';
+import '../../utils/validators/email_validator.dart';
+import '../../utils/validators/password_validator.dart';
+import '../../widgets/account_prompt_row.dart';
+import '../../widgets/divider_with_text.dart';
 
 class LoginScreen extends StatefulWidget {
   static String routeName = '/login';
@@ -17,15 +17,62 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
+  
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   String email = '';
   String password = '';
 
+  Future<void> _handleLogin() async {
+    // Validate form
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) {
+      return;
+    }
+    form.save();
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 1. Sign in with Firebase Auth
+      final credential = await _authService.signIn(
+        email: email,
+        password: password,
+      );
+
+      // 2. Get user data from Firestore
+      final user = await _userService.getUserById(credential.user!.uid);
+
+      if (user == null) {
+        throw 'Utilisateur non trouvé dans la base de données';
+      }
+
+      // 3. Navigate to profile
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.moviesList);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authController = Provider.of<AuthController>(context);
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(),
@@ -37,8 +84,8 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Header
-            Column(
-              children: const [
+            const Column(
+              children: [
                 Text(
                   "Welcome Back!",
                   style: TextStyle(
@@ -106,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   // Error Message
-                  if (authController.errorMessage != null)
+                  if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -120,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              authController.errorMessage!,
+                              _errorMessage!,
                               style: const TextStyle(color: Colors.red),
                             ),
                           ),
@@ -130,31 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Login Button
                   FilledButton(
-                    onPressed: authController.isLoading
-                        ? null
-                        : () async {
-                            // Validate form
-                            final form = _formKey.currentState;
-                            if (form == null || !form.validate()) {
-                              return;
-                            }
-                            form.save();
-
-                            // Attempt login
-                            final success = await authController.signIn(
-                              email: email,
-                              password: password,
-                            );
-
-                            if (success && mounted) {
-                              // Navigate to home or profile
-                              Navigator.pushReplacementNamed(
-                                context,
-                                AppRoutes.profile,
-                              );
-                            }
-                          },
-                    child: authController.isLoading
+                    onPressed: _isLoading ? null : _handleLogin,
+                    child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
