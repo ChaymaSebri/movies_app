@@ -11,7 +11,6 @@ import 'package:movies_app/utils/validators/email_validator.dart';
 import 'package:movies_app/utils/validators/name_validator.dart';
 import 'package:movies_app/utils/validators/password_validator.dart';
 import '../../widgets/account_prompt_row.dart';
-import '../../widgets/divider_with_text.dart';
 
 class SignUpScreen extends StatefulWidget {
   static String routeName = '/sign-up';
@@ -66,14 +65,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final image = await ImagePickerHelper.pickImage();
 
     if (image != null) {
-      // Vérifier la validité de l'image
+      // Validate the image
       final isValid = await ImagePickerHelper.isValidImage(image);
 
       if (!isValid && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image invalide ou trop grande (max 5MB)'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Invalid image or file too large (max 5MB)'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
         return;
@@ -134,9 +137,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       // 4. Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Account created successfully!'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
 
@@ -158,311 +164,543 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            spacing: 32,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Profile Photo Section
-              Column(
-                spacing: 8,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: _isLoading ? null : _selectProfilePhoto,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 48,
-                          backgroundImage: _selectedProfilePicture != null
-                              ? FileImage(_selectedProfilePicture!)
-                              : null,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
-                          child: _selectedProfilePicture != null
-                              ? null
-                              : Icon(
-                                  Icons.person,
-                                  size: 48,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(
-                                  context,
-                                ).scaffoldBackgroundColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.add_a_photo,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Back button
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     ),
                   ),
-                  Text(
-                    "Add a profile photo (optional)",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
+                ),
+  
+                const SizedBox(height: 40),
 
-              // Header
-              const Column(
-                children: [
-                  Text(
-                    "Create an Account",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Let's get you started and create your account.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-
-              // Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  spacing: 24,
+                // Header
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // First Name
-                    TextFormField(
-                      focusNode: _firstNameFocus,
-                      decoration: const InputDecoration(
-                        labelText: "First Name",
-                        hintText: "Please enter your first name",
-                        prefixIcon: Icon(Icons.person_outline),
+                    Text(
+                      "Create an account",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
-                      validator: NameValidatorUtil.validatorWith(
-                        requiredMessage: 'Please enter your first name',
-                        minLengthMessage: 'Name must be at least 2 characters',
-                        invalidCharactersMessage:
-                            'Name can only contain letters, spaces, hyphens, and apostrophes',
-                        minLength: 2,
-                      ),
-                      onSaved: (value) => firstName = value ?? '',
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _lastNameFocus.requestFocus(),
                     ),
-
-                    // Last Name
-                    TextFormField(
-                      focusNode: _lastNameFocus,
-                      decoration: const InputDecoration(
-                        labelText: "Last Name",
-                        hintText: "Please enter your last name",
-                        prefixIcon: Icon(Icons.person_outline),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Join MovieMates and start discovering movies",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[600],
                       ),
-                      validator: NameValidatorUtil.validatorWith(
-                        requiredMessage: 'Please enter your last name',
-                        minLengthMessage: 'Name must be at least 2 characters',
-                        invalidCharactersMessage:
-                            'Name can only contain letters, spaces, hyphens, and apostrophes',
-                        minLength: 2,
-                      ),
-                      onSaved: (value) => lastName = value ?? '',
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _ageFocus.requestFocus(),
                     ),
+                  ],
+                ),
 
-                    // Age
-                    TextFormField(
-                      focusNode: _ageFocus,
-                      decoration: const InputDecoration(
-                        labelText: "Age",
-                        hintText: "Please enter your age",
-                        prefixIcon: Icon(Icons.cake_outlined),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: AgeValidatorUtil.validatorWith(
-                        requiredMessage: 'Please enter your age',
-                        invalidNumberMessage: 'Please enter a valid number',
-                        tooYoungMessage: 'You must be at least 13 years old',
-                        tooOldMessage: 'Please enter a valid age',
-                        minAge: 13,
-                      ),
-                      onSaved: (value) => age = int.tryParse(value ?? '0') ?? 0,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _emailFocus.requestFocus(),
-                    ),
+                const SizedBox(height: 40),
 
-                    // Email
-                    TextFormField(
-                      focusNode: _emailFocus,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                        hintText: "Please enter your email",
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: EmailValidatorUtil(
-                        requiredMessage: 'Email is required',
-                        invalidMessage: 'Please enter a valid email address',
-                      ).validate,
-                      onSaved: (value) => email = value ?? '',
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
-                    ),
-
-                    // Password
-                    TextFormField(
-                      controller: passwordController,
-                      focusNode: _passwordFocus,
-                      decoration: InputDecoration(
-                        labelText: "Password",
-                        hintText: "Please enter your password",
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
-                      obscureText: _obscurePassword,
-                      validator: PasswordValidatorUtil.validatorWith(
-                        requiredMessage: 'Please enter your password',
-                        minLengthMessage:
-                            'Password must be at least 8 characters',
-                        uppercaseMessage:
-                            'Password must contain an uppercase letter',
-                        numberMessage: 'Password must contain a number',
-                        specialCharMessage:
-                            'Password must contain a special character',
-                        minLength: 8,
-                      ),
-                      onSaved: (value) => password = value ?? '',
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) =>
-                          _confirmPasswordFocus.requestFocus(),
-                    ),
-
-                    // Confirm Password
-                    TextFormField(
-                      focusNode: _confirmPasswordFocus,
-                      decoration: InputDecoration(
-                        labelText: "Confirm Password",
-                        hintText: "Please confirm your password",
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscureConfirmPassword =
-                                !_obscureConfirmPassword,
-                          ),
-                        ),
-                      ),
-                      obscureText: _obscureConfirmPassword,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
-                        }
-                        if (value != passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) {
-                        _confirmPasswordFocus.unfocus();
-                      },
-                    ),
-
-                    // Error Message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withAlpha((0.1 * 255).round()),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red),
-                        ),
-                        child: Row(
+                // Profile Photo Section
+                Center(
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: _isLoading ? null : _selectProfilePhoto,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            const Icon(Icons.error_outline, color: Colors.red),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.red),
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.primary.withValues(alpha: 0.2),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 56,
+                                backgroundImage: _selectedProfilePicture != null
+                                    ? FileImage(_selectedProfilePicture!)
+                                    : null,
+                                backgroundColor: colorScheme.surfaceContainerHighest,
+                                child: _selectedProfilePicture != null
+                                    ? null
+                                    : Icon(
+                                        Icons.person_rounded,
+                                        size: 56,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      colorScheme.primary,
+                                      colorScheme.secondary,
+                                    ],
+                                  ),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colorScheme.surface,
+                                    width: 3,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.primary.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(10.0),
+                                  child: Icon(
+                                    Icons.camera_alt_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-
-                    // Sign Up Button
-                    FilledButton(
-                      onPressed: _isLoading ? null : _handleSignUp,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text("Sign Up"),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Footer
-              Column(
-                spacing: 16,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const DividerWithText(text: "Or Sign Up with"),
-                  AccountPromptRow(
-                    promptText: "Already have an account?",
-                    actionText: "Log in",
-                    onActionPressed: () {
-                      Navigator.pop(context);
-                    },
+                      const SizedBox(height: 12),
+                      Text(
+                        _selectedProfilePicture != null 
+                            ? "Tap to change photo" 
+                            : "Add a profile photo (optional)",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+
+                const SizedBox(height: 32),
+
+                // Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Name fields row
+                      Row(
+                        children: [
+                          // First Name
+                          Expanded(
+                            child: TextFormField(
+                              focusNode: _firstNameFocus,
+                              decoration: InputDecoration(
+                                labelText: "First Name",
+                                hintText: "John",
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: colorScheme.primary,
+                                ),
+                                filled: true,
+                                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.error,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              validator: NameValidatorUtil.validatorWith(
+                                requiredMessage: 'Required',
+                                minLengthMessage: 'At least 2 characters',
+                                invalidCharactersMessage:
+                                    'Only letters, spaces, hyphens, and apostrophes',
+                                minLength: 2,
+                              ),
+                              onSaved: (value) => firstName = value ?? '',
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => _lastNameFocus.requestFocus(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Last Name
+                          Expanded(
+                            child: TextFormField(
+                              focusNode: _lastNameFocus,
+                              decoration: InputDecoration(
+                                labelText: "Last Name",
+                                hintText: "Doe",
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: colorScheme.primary,
+                                ),
+                                filled: true,
+                                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.error,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              validator: NameValidatorUtil.validatorWith(
+                                requiredMessage: 'Required',
+                                minLengthMessage: 'At least 2 characters',
+                                invalidCharactersMessage:
+                                    'Only letters, spaces, hyphens, and apostrophes',
+                                minLength: 2,
+                              ),
+                              onSaved: (value) => lastName = value ?? '',
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => _ageFocus.requestFocus(),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Age
+                      TextFormField(
+                        focusNode: _ageFocus,
+                        decoration: InputDecoration(
+                          labelText: "Age",
+                          hintText: "Enter your age",
+                          prefixIcon: Icon(
+                            Icons.cake_outlined,
+                            color: colorScheme.primary,
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.error,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        validator: AgeValidatorUtil.validatorWith(
+                          requiredMessage: 'Age is required',
+                          invalidNumberMessage: 'Please enter a valid number',
+                          tooYoungMessage: 'You must be at least 13 years old',
+                          tooOldMessage: 'Invalid age, maximum allowed is 120',
+                          minAge: 13,
+                        ),
+                        onSaved: (value) => age = int.tryParse(value ?? '0') ?? 0,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => _emailFocus.requestFocus(),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        focusNode: _emailFocus,
+                        decoration: InputDecoration(
+                          labelText: "Email",
+                          hintText: "Enter your email",
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: colorScheme.primary,
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.error,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: EmailValidatorUtil(
+                          requiredMessage: 'Email is required',
+                          invalidMessage: 'Please enter a valid email address',
+                        ).validate,
+                        onSaved: (value) => email = value ?? '',
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: passwordController,
+                        focusNode: _passwordFocus,
+                        decoration: InputDecoration(
+                          labelText: "Password",
+                          hintText: "Create a strong password",
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: colorScheme.primary,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.error,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        obscureText: _obscurePassword,
+                        validator: PasswordValidatorUtil.validatorWith(
+                          requiredMessage: 'Please enter your password',
+                          minLengthMessage:
+                              'Password must be at least 8 characters',
+                          uppercaseMessage:
+                              'Password must contain an uppercase letter',
+                          numberMessage: 'Password must contain a number',
+                          specialCharMessage:
+                              'Password must contain a special character',
+                          minLength: 8,
+                        ),
+                        onSaved: (value) => password = value ?? '',
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _confirmPasswordFocus.requestFocus(),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Confirm Password
+                      TextFormField(
+                        focusNode: _confirmPasswordFocus,
+                        decoration: InputDecoration(
+                          labelText: "Confirm Password",
+                          hintText: "Re-enter your password",
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: colorScheme.primary,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureConfirmPassword =
+                                  !_obscureConfirmPassword,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.error,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        obscureText: _obscureConfirmPassword,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          _confirmPasswordFocus.unfocus();
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Error Message
+                      if (_errorMessage != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: colorScheme.error,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    color: colorScheme.onErrorContainer,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Sign Up Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: FilledButton(
+                          onPressed: _isLoading ? null : _handleSignUp,
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Create Account",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Sign In Prompt
+                AccountPromptRow(
+                  promptText: "Already have an account?",
+                  actionText: "Sign in",
+                  onActionPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),

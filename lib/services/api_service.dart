@@ -6,7 +6,7 @@ import '../config/api_constants.dart';
 class ApiService {
   final String apiKey = ApiConstants.apiKey;
 
-  // ==================== LISTES (retourne des Map) ====================
+  // ==================== LISTS (returns Maps) ====================
   Future<List<Map<String, dynamic>>> _fetchList(String endpoint) async {
     final url = Uri.parse("$endpoint?api_key=$apiKey&language=fr-FR");
     final response = await http.get(url);
@@ -15,7 +15,7 @@ class ApiService {
       final data = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(data['results'] ?? []);
     } else {
-      throw Exception("Erreur ${response.statusCode} : $endpoint");
+      throw Exception("Error ${response.statusCode}: $endpoint");
     }
   }
 
@@ -37,11 +37,11 @@ class ApiService {
       final data = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(data['results'] ?? []);
     } else {
-      throw Exception("Recherche échouée");
+      throw Exception("Search failed");
     }
   }
 
-  // ==================== DÉTAILS D'UN FILM (retourne un Map) ====================
+  // ==================== MOVIE DETAILS (returns a Map) ====================
   Future<Map<String, dynamic>> getMovieDetails(String movieId) async {
     final url = Uri.parse(
       "${ApiConstants.baseUrl}/movie/$movieId?api_key=$apiKey&language=fr-FR",
@@ -51,7 +51,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception("Détails introuvables pour le film $movieId");
+      throw Exception("Details not found for movie $movieId");
     }
   }
 }
