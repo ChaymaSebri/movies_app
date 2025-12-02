@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/admin_service.dart';
-import 'package:movies_app/services/auth_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -11,306 +11,321 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final AdminService _adminService = AdminService();
-  final AuthService _authService = AuthService();
-  
-  String _searchQuery = '';
-  bool _isLoadingStats = true;
-  Map<String, dynamic> _stats = {};
+  int _statsRefreshKey = 0; // Key to force refresh of statistics
 
-  @override
-  void initState() {
-    super.initState();
-    _checkAdminAndLoadStats();
-  }
-
-  Future<void> _checkAdminAndLoadStats() async {
-    final isAdmin = await _adminService.isCurrentUserAdmin();
-    
-    if (!isAdmin) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Accès refusé: Vous n\'êtes pas administrateur'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      return;
-    }
-
-    await _loadStats();
-  }
-
-  Future<void> _loadStats() async {
-    try {
-      final stats = await _adminService.getDashboardStats();
-      if (mounted) {
-        setState(() {
-          _stats = stats;
-          _isLoadingStats = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingStats = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _refreshStats() {
+    setState(() {
+      _statsRefreshKey++;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        elevation: 0,
-        title: const Text(
-          'Admin Dashboard',
-          style: TextStyle(
-            color: Colors.purple,
-            fontWeight: FontWeight.bold,
-          ),
+        title: const Text('Administration'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoadingStats
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.purple),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Statistiques
-                  _buildStatsSection(),
-                  const SizedBox(height: 24),
-                  
-                  // Barre de recherche
-                  TextField(
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un utilisateur...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      filled: true,
-                      fillColor: const Color(0xFF1E1E1E),
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      setState(() => _searchQuery = value.toLowerCase());
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Liste des utilisateurs
-                  const Text(
-                    'Gestion des utilisateurs',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add Movie Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddMovieDialog(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add a movie manually'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildUsersList(),
-                ],
+                ),
               ),
-            ),
-    );
-  }
 
-  Widget _buildStatsSection() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.5,
-      children: [
-        _buildStatCard(
-          'Utilisateurs totaux',
-          _stats['totalUsers']?.toString() ?? '0',
-          Icons.people,
-          Colors.blue,
-        ),
-        _buildStatCard(
-          'Utilisateurs actifs',
-          _stats['activeUsers']?.toString() ?? '0',
-          Icons.check_circle,
-          Colors.green,
-        ),
-        _buildStatCard(
-          'Films disponibles',
-          _stats['totalMovies']?.toString() ?? '0',
-          Icons.movie,
-          Colors.purple,
-        ),
-        _buildStatCard(
-          'Matches créés',
-          _stats['totalMatches']?.toString() ?? '0',
-          Icons.favorite,
-          Colors.red,
-        ),
-      ],
-    );
-  }
+              const SizedBox(height: 24),
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+              // Statistics Section
+              FutureBuilder<Map<String, dynamic>>(
+                key: ValueKey(
+                  _statsRefreshKey,
+                ), // Force rebuild when key changes
+                future: _adminService.getDashboardStats(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  final stats = snapshot.data ?? {};
+                  final totalUsers = stats['totalUsers'] ?? 0;
+                  final activeUsers = stats['activeUsers'] ?? 0;
+                  final inactiveUsers = totalUsers - activeUsers;
+                  final totalMovies = stats['totalMovies'] ?? 0;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Statistics',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Active Users',
+                              '$activeUsers',
+                              Icons.person_outline,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Inactive Users',
+                              '$inactiveUsers',
+                              Icons.person_off_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Added Movies',
+                              '$totalMovies',
+                              Icons.movie_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 32),
+
+              // User Management Section
+              Text(
+                'User Management',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              StreamBuilder<List<Map<String, dynamic>>>(
+                stream: _adminService.getUsersStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text('Error: ${snapshot.error}'),
+                      ),
+                    );
+                  }
+
+                  final docs = snapshot.data ?? [];
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Text('No users found'),
+                      ),
+                    );
+                  }
+
+                  // Separate admins and regular users
+                  final admins = <Map<String, dynamic>>[];
+                  final users = <Map<String, dynamic>>[];
+
+                  for (var item in docs) {
+                    final data = item;
+                    final isAdmin =
+                        data['role'] == 'admin' || data['isAdmin'] == true;
+                    if (isAdmin) {
+                      admins.add(data);
+                    } else {
+                      users.add(data);
+                    }
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Admins Section
+                      if (admins.isNotEmpty) ...[
+                        Text(
+                          'Administrators',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...admins.map(
+                          (data) => _buildUserCard(
+                            data['id']?.toString() ?? '',
+                            data,
+                            true,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Regular Users Section
+                      if (users.isNotEmpty) ...[
+                        Text(
+                          'Users',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...users.map(
+                          (data) => _buildUserCard(
+                            data['id']?.toString() ?? '',
+                            data,
+                            false,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.5),
+        currentIndex: 3, // Admin tab is selected
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pop(context); // Go back to Discover
+            return;
+          }
+
+          if (index == 1) {
+            Navigator.pushReplacementNamed(context, '/favorites');
+            return;
+          }
+
+          if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/matching');
+            return;
+          }
+
+          // index == 3 is already selected (Admin)
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-            ),
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Admin"),
         ],
       ),
     );
   }
 
-  Widget _buildUsersList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _adminService.getUsersStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: CircularProgressIndicator(color: Colors.purple),
+  Widget _buildStatCard(String label, String value, IconData icon) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(icon, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Erreur: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                'Aucun utilisateur trouvé',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          );
-        }
-
-        var users = snapshot.data!;
-
-        // Filtrer selon la recherche
-        if (_searchQuery.isNotEmpty) {
-          users = users.where((user) {
-            final firstName = (user['firstName'] ?? user['prenom'] ?? '')
-                .toString()
-                .toLowerCase();
-            final lastName = (user['lastName'] ?? user['nom'] ?? '')
-                .toString()
-                .toLowerCase();
-            final email = (user['email'] ?? '').toString().toLowerCase();
-            
-            return firstName.contains(_searchQuery) ||
-                   lastName.contains(_searchQuery) ||
-                   email.contains(_searchQuery);
-          }).toList();
-        }
-
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            final user = users[index];
-            return _buildUserCard(user);
-          },
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
-    final userId = user['id'] as String;
-    final firstName = user['firstName'] ?? user['prenom'] ?? 'N/A';
-    final lastName = user['lastName'] ?? user['nom'] ?? '';
-    final email = user['email'] ?? 'N/A';
-    final isActive = user['isActive'] ?? true;
-    final isAdmin = user['role'] == 'admin' || user['isAdmin'] == true;
-    final photoUrl = user['photoUrl'] as String?;
-
-    // Ne pas permettre de modifier son propre compte
-    final currentUserId = _authService.currentUser?.uid;
-    final isSelf = userId == currentUserId;
+  Widget _buildUserCard(String id, Map<String, dynamic> data, bool isAdmin) {
+    final isActive = data['isActive'] ?? true;
+    final firstName = data['firstName'] ?? data['prenom'] ?? '';
+    final lastName = data['lastName'] ?? data['nom'] ?? '';
+    final name = '$firstName $lastName'.trim();
+    final email = data['email'] ?? '';
+    final photoUrl = data['photoUrl'] as String?;
 
     return Card(
-      color: const Color(0xFF1E1E1E),
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isActive ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3),
-        ),
-      ),
+      color: isActive ? null : Colors.grey.shade800.withValues(alpha: 0.3),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
             // Avatar
             CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.purple.withValues(alpha: 0.2),
+              radius: 24,
               backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
                   ? NetworkImage(photoUrl)
                   : null,
               child: (photoUrl == null || photoUrl.isEmpty)
-                  ? const Icon(Icons.person, color: Colors.white, size: 28)
+                  ? Text(
+                      name.isNotEmpty
+                          ? name[0].toUpperCase()
+                          : (email.isNotEmpty ? email[0].toUpperCase() : '?'),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
                   : null,
             ),
-            const SizedBox(width: 16),
-            
-            // Infos utilisateur
+            const SizedBox(width: 12),
+
+            // User Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,96 +334,76 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '$firstName $lastName',
+                          name.isEmpty ? email : name,
                           style: const TextStyle(
-                            color: Colors.white,
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      if (isAdmin)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'ADMIN',
-                            style: TextStyle(
-                              color: Colors.purple,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     email,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isActive ? 'Actif' : 'Désactivé',
                     style: TextStyle(
-                      color: isActive ? Colors.green : Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Actions
-            if (!isSelf)
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                color: const Color(0xFF2A2A2A),
-                onSelected: (value) => _handleUserAction(value, userId, isActive),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Row(
-                      children: [
-                        Icon(
-                          isActive ? Icons.block : Icons.check_circle,
-                          color: isActive ? Colors.red : Colors.green,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isActive ? 'Désactiver' : 'Activer',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isAdmin)
-                    const PopupMenuItem(
-                      value: 'promote',
+
+            const SizedBox(width: 8),
+
+            // Status Button (only for non-admin users)
+            if (!isAdmin)
+              SizedBox(
+                width: 88,
+                child: Material(
+                  color: isActive ? Colors.green.shade700 : Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(20),
+                  child: InkWell(
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await _adminService.toggleUserStatus(id, isActive);
+                        _refreshStats(); // Refresh statistics after status change
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.admin_panel_settings,
-                              color: Colors.purple, size: 20),
-                          SizedBox(width: 8),
+                          Icon(
+                            isActive ? Icons.person_outline : Icons.person_off_outlined,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            'Promouvoir admin',
-                            style: TextStyle(color: Colors.white),
+                            isActive ? 'Actif' : 'Inactif',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                ],
+                  ),
+                ),
               ),
           ],
         ),
@@ -416,42 +411,82 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Future<void> _handleUserAction(String action, String userId, bool isActive) async {
-    try {
-      if (action == 'toggle') {
-        await _adminService.toggleUserStatus(userId, isActive);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isActive ? 'Utilisateur désactivé' : 'Utilisateur activé',
+  void _showAddMovieDialog(BuildContext context) {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final posterCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add a Movie'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  border: OutlineInputBorder(),
+                ),
               ),
-              backgroundColor: Colors.purple,
-            ),
-          );
-        }
-        await _loadStats(); // Recharger les stats
-      } else if (action == 'promote') {
-        await _adminService.promoteToAdmin(userId);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Utilisateur promu administrateur'),
-              backgroundColor: Colors.purple,
-            ),
-          );
-        }
-        await _loadStats(); // Recharger les stats
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
+              const SizedBox(height: 12),
+              TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: posterCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Poster URL (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-        );
-      }
-    }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final title = titleCtrl.text.trim();
+              final desc = descCtrl.text.trim();
+              final poster = posterCtrl.text.trim();
+              if (title.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Title is required')),
+                );
+                return;
+              }
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await _adminService.addMovie({
+                  'title': title,
+                  'description': desc,
+                  'posterUrl': poster,
+                });
+                navigator.pop();
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Movie added successfully')),
+                );
+              } catch (e) {
+                messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 }

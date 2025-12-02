@@ -30,7 +30,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   String? _currentUserId;
   String? userPhotoUrl;
   bool _isLoadingUser = true;
-  bool _isAdmin = false; // ← NOUVEAU : Statut admin
+  bool _isAdmin = false;
 
   late final Future<List<Movie>> _popularFuture;
   late final Future<List<Movie>> _topRatedFuture;
@@ -58,10 +58,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
     }
 
     try {
-      // Charger les données utilisateur
       final user = await _userService.getUserById(userId);
-      
-      // Vérifier si admin
       final isAdmin = await _adminService.isCurrentUserAdmin();
 
       if (!mounted) return;
@@ -69,7 +66,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
       setState(() {
         _currentUserId = userId;
         userPhotoUrl = user?.photoUrl;
-        _isAdmin = isAdmin; // ← Stocker le statut
+        _isAdmin = isAdmin;
         _isLoadingUser = false;
       });
     } catch (_) {
@@ -90,47 +87,50 @@ class _MoviesListScreenState extends State<MoviesListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (_isLoadingUser) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF121212),
-        body: Center(child: CircularProgressIndicator(color: Colors.purple)),
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
       );
     }
 
     if (_currentUserId == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF121212),
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
         body: Center(
           child: Text(
-            "Erreur d'authentification",
-            style: TextStyle(color: Colors.white),
+            "Authentication error",
+            style: theme.textTheme.bodyLarge,
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        title: const Text(
-          "MOVIES",
-          style: TextStyle(
-            color: Colors.purple,
-            fontSize: 26,
+        title: Text(
+            "MovieMates",
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: colorScheme.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          // Avatar utilisateur
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
               child: CircleAvatar(
                 radius: 22,
-                backgroundColor: Colors.purple.withValues(alpha: 0.2),
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.2),
                 child: CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.transparent,
@@ -139,7 +139,11 @@ class _MoviesListScreenState extends State<MoviesListScreen>
                           ? NetworkImage(userPhotoUrl!)
                           : null,
                   child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
-                      ? const Icon(Icons.person, color: Colors.white, size: 24)
+                      ? Icon(
+                          Icons.person,
+                          color: colorScheme.onSurface,
+                          size: 24,
+                        )
                       : null,
                 ),
               ),
@@ -153,13 +157,18 @@ class _MoviesListScreenState extends State<MoviesListScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: colorScheme.onSurface),
                   decoration: InputDecoration(
-                    hintText: "Rechercher un film...",
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hintText: "Search for a movie...",
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     filled: true,
-                    fillColor: const Color(0xFF1E1E1E),
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -176,9 +185,9 @@ class _MoviesListScreenState extends State<MoviesListScreen>
                   Tab(text: "Top Rated"),
                   Tab(text: "Upcoming"),
                 ],
-                labelColor: Colors.purple,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.purple,
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
+                indicatorColor: colorScheme.primary,
                 indicatorWeight: 4,
               ),
             ],
@@ -194,10 +203,11 @@ class _MoviesListScreenState extends State<MoviesListScreen>
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1E1E1E),
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.5),
         currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 1) {
             Navigator.push(
@@ -218,10 +228,18 @@ class _MoviesListScreenState extends State<MoviesListScreen>
           }
         },
         items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
-          const BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favoris"),
-          const BottomNavigationBarItem(icon: Icon(Icons.people), label: "Matching"),
-          // BOUTON ADMIN DASHBOARD (visible seulement si admin)
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: "Discover",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Favorites",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: "Matching",
+          ),
           if (_isAdmin)
             const BottomNavigationBarItem(
               icon: Icon(Icons.dashboard),
@@ -233,17 +251,25 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   }
 
   Widget _buildMovieGrid(Future<List<Movie>> future) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return FutureBuilder<List<Movie>>(
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.purple),
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text("Aucun film", style: TextStyle(color: Colors.white70)),
+          return Center(
+            child: Text(
+                "No movies found",
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
           );
         }
 
@@ -318,6 +344,7 @@ class _MovieGridCardState extends State<MovieGridCard> {
   }
 
   void _toggleFavorite() async {
+    final theme = Theme.of(context);
     setState(() => isLoadingFavorite = true);
     try {
       if (isFavorite) {
@@ -335,9 +362,9 @@ class _MovieGridCardState extends State<MovieGridCard> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erreur lors de la modification des favoris"),
-            backgroundColor: Colors.purple,
+          SnackBar(
+            content: const Text("Error updating favorites"),
+            backgroundColor: theme.colorScheme.primary,
           ),
         );
       }
@@ -352,6 +379,8 @@ class _MovieGridCardState extends State<MovieGridCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final year = widget.movie.releaseDate?.year.toString() ?? "N/A";
     final rating = widget.movie.rating?.toStringAsFixed(1) ?? "N/A";
 
@@ -386,21 +415,21 @@ class _MovieGridCardState extends State<MovieGridCard> {
                       loadingBuilder: (_, child, progress) => progress == null
                           ? child
                           : Container(
-                              color: Colors.grey[800],
+                              color: colorScheme.surfaceContainerHighest,
                               height: 260,
-                              child: const Center(
+                              child: Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.purple,
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             ),
                       errorBuilder: (_, _, _) => Container(
                         height: 260,
-                        color: Colors.grey[850],
-                        child: const Icon(
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(
                           Icons.broken_image,
-                          color: Colors.grey,
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
                           size: 60,
                         ),
                       ),
@@ -412,15 +441,20 @@ class _MovieGridCardState extends State<MovieGridCard> {
                   widget.movie.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isHovered ? Colors.purple : Colors.white,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isHovered
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 Text(
                   year,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -462,19 +496,21 @@ class _MovieGridCardState extends State<MovieGridCard> {
               child: IconButton(
                 iconSize: 32,
                 icon: isLoadingFavorite
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.purple,
+                          color: colorScheme.primary,
                         ),
                       )
                     : Icon(
                         isFavorite
                             ? Icons.favorite_rounded
                             : Icons.favorite_border_rounded,
-                        color: isFavorite ? Colors.purple : Colors.white,
+                        color: isFavorite
+                            ? colorScheme.primary
+                            : colorScheme.onSurface,
                         shadows: const [
                           Shadow(blurRadius: 12, color: Colors.black54),
                         ],
