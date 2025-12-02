@@ -33,20 +33,11 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   bool _isAdmin = false;
 
   final List<String> _categories = ['Popular', 'Top Rated', 'Upcoming'];
-  
-  late Future<List<Movie>> _popularFuture;
-  late Future<List<Movie>> _topRatedFuture;
-  late Future<List<Movie>> _upcomingFuture;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
-    _popularFuture = _movieService.getPopularMovies();
-    _topRatedFuture = _movieService.getTopRatedMovies();
-    _upcomingFuture = _movieService.getUpcomingMovies();
-    
     _loadCurrentUser();
   }
 
@@ -86,19 +77,6 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<List<Movie>> _getFutureForCategory(String category) {
-    switch (category) {
-      case 'Popular':
-        return _popularFuture;
-      case 'Top Rated':
-        return _topRatedFuture;
-      case 'Upcoming':
-        return _upcomingFuture;
-      default:
-        return _popularFuture;
-    }
   }
 
   @override
@@ -261,30 +239,97 @@ class _MoviesListScreenState extends State<MoviesListScreen>
   Widget _buildMovieGrid(String category) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final future = _getFutureForCategory(category);
 
-    return FutureBuilder<List<Movie>>(
-      future: future,
+    // ✅ FIXED: Use StreamBuilder with getMoviesByCategory
+    // This combines both API movies AND Firebase movies!
+    return StreamBuilder<List<Movie>>(
+      stream: _movieService.getMoviesByCategory(category),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(color: colorScheme.primary),
           );
         }
+        
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 60,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Error loading movies",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "${snapshot.error}",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+        
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
-            child: Text(
-              "No movies found",
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.movie_outlined,
+                  size: 60,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No movies found",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
             ),
           );
         }
 
         var movies = snapshot.data!;
+        
+        // Apply search filter
         if (_searchQuery.isNotEmpty) {
           movies = movies.where((m) => m.title.toLowerCase().contains(_searchQuery)).toList();
+        }
+
+        if (movies.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 60,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No results for \"$_searchQuery\"",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
         return GridView.builder(

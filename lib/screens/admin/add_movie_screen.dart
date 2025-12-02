@@ -129,11 +129,14 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
     }
 
     final backdropUrl =
-        posterUrl.replaceAll('/upload/', '/upload/w_1280,c_limit/');
+    posterUrl.replaceAll('/upload/', '/upload/w_1280,c_limit/');
 
     try {
+      // Generate unique ID for the movie
+      final movieId = DateTime.now().millisecondsSinceEpoch.toString();
+
       final movie = Movie(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: movieId,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         posterUrl: posterUrl,
@@ -147,15 +150,18 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
         category: _selectedCategory,
       );
 
+      // Use .doc(movieId).set() instead of .add()
+      // This ensures the document ID matches the movie.id
       await FirebaseFirestore.instance
           .collection('movies')
-          .add(movie.toFirestoreMap());
+          .doc(movieId)
+          .set(movie.toFirestoreMap());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Movie added successfully!"),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text("Movie added successfully!"),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         Navigator.pop(context, true);
@@ -176,21 +182,20 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Add Movie",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -218,11 +223,9 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
               const SizedBox(height: 30),
 
               // POSTER
-              const Text(
+              Text(
                 "Poster",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -233,43 +236,47 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                   height: 300,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E2E),
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.purple.shade400, width: 2),
+                    border: Border.all(
+                      color: colorScheme.primary,
+                      width: 2,
+                    ),
                   ),
                   child: _selectedImage == null
                       ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.add_a_photo,
-                              size: 60,
-                              color: Colors.purple,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              "Click to upload poster",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "PNG, JPG up to 10MB",
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        )
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.file(
-                            _selectedImage!,
-                            fit: BoxFit.cover,
-                          ),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo,
+                        size: 60,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Click to upload poster",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface
+                              .withValues(alpha: 0.7),
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "PNG, JPG up to 10MB",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  )
+                      : ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.file(
+                      _selectedImage!,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -301,15 +308,13 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                 "Rating (out of 10)",
                 "8.5",
                 keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                const TextInputType.numberWithOptions(decimal: true),
               ),
 
               const SizedBox(height: 30),
-              const Text(
+              Text(
                 "Category",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -321,10 +326,13 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                   return ChoiceChip(
                     label: Text(cat),
                     selected: selected,
-                    selectedColor: Colors.purple,
-                    backgroundColor: Colors.grey[800],
+                    selectedColor: colorScheme.primary,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
                     labelStyle: TextStyle(
-                      color: selected ? Colors.white : Colors.white70,
+                      color: selected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                     ),
                     onSelected: (_) => setState(() => _selectedCategory = cat),
                   );
@@ -332,11 +340,9 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
               ),
 
               const SizedBox(height: 30),
-              const Text(
+              Text(
                 "Genres",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -349,11 +355,16 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                   return FilterChip(
                     label: Text(g),
                     selected: selected,
-                    selectedColor: Colors.purple,
-                    backgroundColor: Colors.grey[800],
-                    labelStyle: const TextStyle(color: Colors.white),
+                    selectedColor: colorScheme.primary,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    ),
                     onSelected: (v) => setState(
-                      () => v
+                          () => v
                           ? _selectedGenres.add(g)
                           : _selectedGenres.remove(g),
                     ),
@@ -370,30 +381,31 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                 child: ElevatedButton(
                   onPressed: _isUploading ? null : _addMovie,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    disabledBackgroundColor: Colors.purple.shade700,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    disabledBackgroundColor:
+                    colorScheme.primary.withValues(alpha: 0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 8,
                   ),
                   child: _isUploading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
-                          ),
-                        )
+                      ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: colorScheme.onPrimary,
+                      strokeWidth: 3,
+                    ),
+                  )
                       : const Text(
-                          "Add Movie",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                    "Add Movie",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
 
@@ -406,33 +418,48 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
   }
 
   Widget _buildTextField(
-    TextEditingController c,
-    String label,
-    String hint, {
-    int maxLines = 1,
-    TextInputType? keyboardType,
-  }) {
+      TextEditingController c,
+      String label,
+      String hint, {
+        int maxLines = 1,
+        TextInputType? keyboardType,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 16),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: c,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.grey),
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
             filled: true,
-            fillColor: const Color(0xFF1E1E2E),
+            fillColor: colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.primary,
+                width: 2,
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,

@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3e009d66-5d49-4ef1-b08a-726becee426b" name="Changes" comment="Merge branch 'main' of https://github.com/ChaymaSebri/movies_app into feature-movie&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;lib/main.dart&#10;#&#9;lib/screens/movies/favorites_screen.dart&#10;#&#9;lib/screens/movies/movie_detail_screen.dart&#10;#&#9;lib/screens/movies/movies_list_screen.dart&#10;#&#9;lib/services/cloudinary_service.dart&#10;#&#9;lib/services/movie_service.dart&#10;#&#9;lib/services/playlist_service.dart">
-      <change beforePath="$PROJECT_DIR$/lib/config/app_router.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/config/app_router.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/constants/app_routes.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_routes.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/admin/add_movie_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/admin/add_movie_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/movies/movies_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/movies/movies_list_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
