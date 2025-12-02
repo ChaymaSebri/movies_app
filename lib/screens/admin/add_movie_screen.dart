@@ -9,7 +9,8 @@ import '../../models/movie_model.dart';
 
 class AddMovieScreen extends StatefulWidget {
   const AddMovieScreen({Key? key}) : super(key: key);
-  @override State<AddMovieScreen> createState() => _AddMovieScreenState();
+  @override
+  State<AddMovieScreen> createState() => _AddMovieScreenState();
 }
 
 class _AddMovieScreenState extends State<AddMovieScreen> {
@@ -28,15 +29,42 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
 
   final List<String> _categories = ['Popular', 'Top Rated', 'Upcoming'];
   final List<String> _allGenres = [
-    'Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy',
-    'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'Biography', 'History'
+    'Action',
+    'Adventure',
+    'Comedy',
+    'Crime',
+    'Drama',
+    'Fantasy',
+    'Horror',
+    'Mystery',
+    'Romance',
+    'Sci-Fi',
+    'Thriller',
+    'Biography',
+    'History'
   ];
 
   final ImagePicker _picker = ImagePicker();
-  final cloudinary = CloudinaryPublic(
-    dotenv.env['CLOUDINARY_CLOUD_NAME']!,
-    dotenv.env['CLOUDINARY_UPLOAD_PRESET']!,
-  );
+  late final CloudinaryPublic cloudinary;
+
+  @override
+  void initState() {
+    super.initState();
+    cloudinary = CloudinaryPublic(
+      dotenv.env['CLOUDINARY_CLOUD_NAME']!,
+      dotenv.env['CLOUDINARY_UPLOAD_PRESET']!,
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _yearController.dispose();
+    _durationController.dispose();
+    _ratingController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
@@ -62,59 +90,93 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
       );
       return response.secureUrl;
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur upload: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Upload error: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return null;
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
   Future<void> _addMovie() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedGenres.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Choisis un genre")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select at least one genre")),
+      );
       return;
     }
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ajoute une affiche !")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please add a poster image")),
+      );
       return;
     }
 
     setState(() => _isUploading = true);
     final posterUrl = await _uploadImage();
-    if (posterUrl == null) return;
+    if (posterUrl == null) {
+      setState(() => _isUploading = false);
+      return;
+    }
 
-    final backdropUrl = posterUrl.replaceAll('/upload/', '/upload/w_1280,c_limit/');
+    final backdropUrl =
+        posterUrl.replaceAll('/upload/', '/upload/w_1280,c_limit/');
 
-    final movie = Movie(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      posterUrl: posterUrl,
-      backdropUrl: backdropUrl,
-      releaseDate: DateTime(int.parse(_yearController.text.trim())),
-      runtime: int.tryParse(_durationController.text.trim()),
-      rating: double.tryParse(_ratingController.text.replaceAll(',', '.')),
-      genres: _selectedGenres,
-      source: 'manual',
-      addedBy: 'admin',
-      category: _selectedCategory,
-    );
-
-    await FirebaseFirestore.instance.collection('movies').add(movie.toFirestoreMap());
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Film ajouté !"), backgroundColor: Colors.green),
+    try {
+      final movie = Movie(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        posterUrl: posterUrl,
+        backdropUrl: backdropUrl,
+        releaseDate: DateTime(int.parse(_yearController.text.trim())),
+        runtime: int.tryParse(_durationController.text.trim()),
+        rating: double.tryParse(_ratingController.text.replaceAll(',', '.')),
+        genres: _selectedGenres,
+        source: 'manual',
+        addedBy: 'admin',
+        category: _selectedCategory,
       );
-      Navigator.pop(context);
+
+      await FirebaseFirestore.instance
+          .collection('movies')
+          .add(movie.toFirestoreMap());
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Movie added successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error adding movie: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -124,7 +186,14 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Ajouter un film", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Add Movie",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Form(
@@ -134,13 +203,29 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField(_titleController, "Titre du film", "Ex: Inception"),
+              _buildTextField(
+                _titleController,
+                "Movie Title",
+                "e.g., Inception",
+              ),
               const SizedBox(height: 20),
-              _buildTextField(_descriptionController, "Description", "Synopsis du film...", maxLines: 4),
+              _buildTextField(
+                _descriptionController,
+                "Description",
+                "Movie synopsis...",
+                maxLines: 4,
+              ),
               const SizedBox(height: 30),
 
               // POSTER
-              const Text("Poster", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                "Poster",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: _pickImage,
@@ -154,32 +239,80 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                   ),
                   child: _selectedImage == null
                       ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add_a_photo, size: 60, color: Colors.purple),
-                      SizedBox(height: 16),
-                      Text("Click to upload poster", style: TextStyle(color: Colors.white70, fontSize: 16)),
-                      Text("PNG, JPG up to 10MB", style: TextStyle(color: Colors.white38, fontSize: 14)),
-                    ],
-                  )
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.add_a_photo,
+                              size: 60,
+                              color: Colors.purple,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              "Click to upload poster",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              "PNG, JPG up to 10MB",
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        )
                       : ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                  ),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 30),
 
-              Row(children: [
-                Expanded(child: _buildTextField(_yearController, "Année", "2024", keyboardType: TextInputType.number)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildTextField(_durationController, "Durée (min)", "120", keyboardType: TextInputType.number)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      _yearController,
+                      "Year",
+                      "2024",
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildTextField(
+                      _durationController,
+                      "Duration (min)",
+                      "120",
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
-              _buildTextField(_ratingController, "Note (sur 10)", "8.5", keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              _buildTextField(
+                _ratingController,
+                "Rating (out of 10)",
+                "8.5",
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
 
               const SizedBox(height: 30),
-              const Text("Catégorie", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                "Category",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -190,14 +323,23 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                     selected: selected,
                     selectedColor: Colors.purple,
                     backgroundColor: Colors.grey[800],
-                    labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70),
+                    labelStyle: TextStyle(
+                      color: selected ? Colors.white : Colors.white70,
+                    ),
                     onSelected: (_) => setState(() => _selectedCategory = cat),
                   );
                 }).toList(),
               ),
 
               const SizedBox(height: 30),
-              const Text("Genres", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                "Genres",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
@@ -210,14 +352,18 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                     selectedColor: Colors.purple,
                     backgroundColor: Colors.grey[800],
                     labelStyle: const TextStyle(color: Colors.white),
-                    onSelected: (v) => setState(() => v ? _selectedGenres.add(g) : _selectedGenres.remove(g)),
+                    onSelected: (v) => setState(
+                      () => v
+                          ? _selectedGenres.add(g)
+                          : _selectedGenres.remove(g),
+                    ),
                   );
                 }).toList(),
               ),
 
               const SizedBox(height: 40),
 
-              // BOUTON FIXE EN BAS DU FORMULAIRE
+              // ADD BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -225,23 +371,33 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                   onPressed: _isUploading ? null : _addMovie,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purple,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    disabledBackgroundColor: Colors.purple.shade700,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     elevation: 8,
                   ),
                   child: _isUploading
                       ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                  )
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
                       : const Text(
-                    "Ajouter le film",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
+                          "Add Movie",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
 
-              const SizedBox(height: 40), // Pour le clavier
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -249,11 +405,20 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController c, String label, String hint, {int maxLines = 1, TextInputType? keyboardType}) {
+  Widget _buildTextField(
+    TextEditingController c,
+    String label,
+    String hint, {
+    int maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 16)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 16),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: c,
@@ -265,10 +430,16 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
             hintStyle: const TextStyle(color: Colors.grey),
             filled: true,
             fillColor: const Color(0xFF1E1E2E),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
           ),
-          validator: (v) => v?.trim().isEmpty == true ? "Requis" : null,
+          validator: (v) => v?.trim().isEmpty == true ? "Required" : null,
         ),
       ],
     );

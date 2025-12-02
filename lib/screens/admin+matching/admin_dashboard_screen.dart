@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/admin_service.dart';
+import 'package:movies_app/constants/app_routes.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -38,11 +38,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Add Movie Button
+              // Add Movie Button - Navigate to AddMovieScreen
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _showAddMovieDialog(context),
+                  onPressed: () async {
+                    // Navigate to AddMovieScreen
+                    final result = await Navigator.pushNamed(
+                      context,
+                      AppRoutes.addMovie,
+                    );
+                    // Refresh stats if a movie was added
+                    if (result == true) {
+                      _refreshStats();
+                    }
+                  },
                   icon: const Icon(Icons.add),
                   label: const Text('Add a movie manually'),
                   style: ElevatedButton.styleFrom(
@@ -239,12 +249,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           }
 
           if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/favorites');
+            Navigator.pushReplacementNamed(context, AppRoutes.favorites);
             return;
           }
 
           if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/matching');
+            Navigator.pushReplacementNamed(context, AppRoutes.matching);
             return;
           }
 
@@ -407,85 +417,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showAddMovieDialog(BuildContext context) {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final posterCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add a Movie'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: posterCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Poster URL (optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final title = titleCtrl.text.trim();
-              final desc = descCtrl.text.trim();
-              final poster = posterCtrl.text.trim();
-              if (title.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Title is required')),
-                );
-                return;
-              }
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-              try {
-                await _adminService.addMovie({
-                  'title': title,
-                  'description': desc,
-                  'posterUrl': poster,
-                });
-                navigator.pop();
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Movie added successfully')),
-                );
-              } catch (e) {
-                messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
