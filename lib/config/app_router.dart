@@ -32,7 +32,7 @@ class AppRouter {
       AppRoutes.adminDashboard: (context) => const AdminDashboardScreen(),
       AppRoutes.addMovie: (context) => const AddMovieScreen(), 
 
-      AppRoutes.matching: (context) => const MatchingPage(),
+      AppRoutes.matching: (context) => const MatchingScreen(),
       AppRoutes.matchDetail: (context) {
         final args =
             ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
