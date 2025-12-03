@@ -28,7 +28,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         title: const Text('Administration'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -244,7 +244,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/movies');
+            Navigator.pop(context);
             return;
           }
 

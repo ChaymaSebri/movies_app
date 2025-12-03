@@ -7,11 +7,9 @@ import 'package:movies_app/services/playlist_service.dart';
 import 'package:movies_app/services/user_service.dart';
 import 'package:movies_app/models/movie_model.dart';
 import 'package:movies_app/constants/app_routes.dart';
-import 'movie_detail_screen.dart';
-import 'favorites_screen.dart';
 
 class MoviesListScreen extends StatefulWidget {
-  const MoviesListScreen({Key? key}) : super(key: key);
+  const MoviesListScreen({super.key});
 
   @override
   State<MoviesListScreen> createState() => _MoviesListScreenState();
@@ -224,7 +222,7 @@ class _MoviesListScreenState extends State<MoviesListScreen>
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.people),
-            label: "Matching",
+            label: "Matches",
           ),
           if (_isAdmin)
             const BottomNavigationBarItem(

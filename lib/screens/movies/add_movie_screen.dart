@@ -1,4 +1,4 @@
-// lib/screens/admin/add_movie_screen.dart
+// lib/screens/movies/add_movie_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,7 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/movie_model.dart';
 
 class AddMovieScreen extends StatefulWidget {
-  const AddMovieScreen({Key? key}) : super(key: key);
+  const AddMovieScreen({super.key});
   @override
   State<AddMovieScreen> createState() => _AddMovieScreenState();
 }
@@ -187,19 +187,13 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Add Movie",
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          "Add Movie"
         ),
-        centerTitle: true,
       ),
       body: Form(
         key: _formKey,
@@ -377,7 +371,7 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
               // ADD BUTTON
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 40,
                 child: ElevatedButton(
                   onPressed: _isUploading ? null : _addMovie,
                   style: ElevatedButton.styleFrom(
@@ -402,8 +396,7 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
                       : const Text(
                     "Add Movie",
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
                 ),

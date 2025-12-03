@@ -86,19 +86,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "My Playlist",
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text("My Playlist"),
       ),
       body: StreamBuilder<List<Movie>>(
         stream: _playlistService.getFavoriteMoviesStream(_currentUserId!),
@@ -150,12 +142,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           }
 
           if (index == 2) {
-            Navigator.pushNamed(context, AppRoutes.matching);
+            Navigator.pushReplacementNamed(context, AppRoutes.matching);
             return;
           }
 
           if (index == 3 && _isAdmin) {
-            Navigator.pushNamed(context, AppRoutes.adminDashboard);
+            Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
             return;
           }
         },
@@ -170,7 +162,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.people),
-            label: "Matching",
+            label: "Matches",
           ),
           if (_isAdmin)
             const BottomNavigationBarItem(
@@ -269,7 +261,9 @@ class _FavoriteMovieCardState extends State<FavoriteMovieCard> {
     if (url.contains('cloudinary.com')) {
       return url.replaceAll('/upload/', '/upload/w_500,c_limit,q_auto,f_auto/');
     }
-    return url.isNotEmpty ? url : "https://picsum.photos/500/750?random=${widget.movie.id}";
+    return url.isNotEmpty
+        ? url
+        : "https://picsum.photos/500/750?random=${widget.movie.id}";
   }
 
   void _removeFromFavorites() async {

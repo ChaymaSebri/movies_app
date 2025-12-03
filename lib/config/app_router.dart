@@ -10,9 +10,9 @@ import 'package:movies_app/screens/auth/reset_password_screen.dart';
 import 'package:movies_app/screens/movies/movies_list_screen.dart';
 import 'package:movies_app/screens/movies/movie_detail_screen.dart';
 import 'package:movies_app/screens/movies/favorites_screen.dart';
+import 'package:movies_app/screens/movies/add_movie_screen.dart'; 
 
 import 'package:movies_app/screens/admin+matching/admin_dashboard_screen.dart';
-import 'package:movies_app/screens/admin/add_movie_screen.dart'; 
 import 'package:movies_app/screens/admin+matching/matching_screen.dart';
 import 'package:movies_app/screens/admin+matching/match_detail_screen.dart';
 

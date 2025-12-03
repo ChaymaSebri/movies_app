@@ -56,6 +56,10 @@ class _MatchingPageState extends State<MatchingPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Matches'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -121,7 +125,7 @@ class _MatchingPageState extends State<MatchingPage> {
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/movies');
+            Navigator.pop(context);
             return;
           }
 

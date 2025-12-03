@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:movies_app/config/cloudinary_config.dart';
 

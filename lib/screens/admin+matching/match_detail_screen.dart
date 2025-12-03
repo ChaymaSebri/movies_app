@@ -61,7 +61,13 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         .trim();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Match Detail')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Match Detail'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
