@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:movies_app/services/matching_service.dart';
 import 'package:movies_app/services/auth_service.dart';
 import 'package:movies_app/constants/app_routes.dart';
@@ -13,6 +16,7 @@ class MatchingPage extends StatefulWidget {
 class _MatchingPageState extends State<MatchingPage> {
   final MatchingService _matchingService = MatchingService();
   final AuthService _authService = AuthService();
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _favoritesSub;
 
   bool _loading = true;
   List<Map<String, dynamic>> _matches = [];
@@ -21,6 +25,25 @@ class _MatchingPageState extends State<MatchingPage> {
   void initState() {
     super.initState();
     _loadMatches();
+    // Listen to current user's favorites subcollection and reload matches on any change
+    final user = _authService.currentUser;
+    if (user != null) {
+      _favoritesSub = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('favorites')
+          .snapshots()
+          .listen((_) {
+            // Recompute matches when favorites change
+            _loadMatches();
+          });
+    }
+  }
+
+  @override
+  void dispose() {
+    _favoritesSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadMatches() async {
@@ -42,9 +65,9 @@ class _MatchingPageState extends State<MatchingPage> {
     } catch (e) {
       setState(() => _loading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -64,59 +87,53 @@ class _MatchingPageState extends State<MatchingPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _matches.isEmpty
-              ? Center(
-                  child: Text(
-                    'No matches found',
+          ? Center(
+              child: Text(
+                'No matches found',
+                style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
+                textAlign: TextAlign.center,
+              ),
+            )
+          : ListView.separated(
+              itemCount: _matches.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final match = _matches[index];
+                final userData =
+                    match['userData'] as Map<String, dynamic>? ?? {};
+
+                final name =
+                    '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+                        .trim();
+
+                final percent =
+                    (match['matchPercentage'] as double?)?.toStringAsFixed(1) ??
+                    '0.0';
+
+                return ListTile(
+                  title: Text(
+                    name.isEmpty
+                        ? (userData['email'] ?? match['userId'])
+                        : name,
                     style: TextStyle(
-                      fontSize: 16,
-                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _matches.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final match = _matches[index];
-                    final userData =
-                        match['userData'] as Map<String, dynamic>? ?? {};
-
-                    final name =
-                        '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
-                            .trim();
-
-                    final percent =
-                        (match['matchPercentage'] as double?)
-                                ?.toStringAsFixed(1) ??
-                            '0.0';
-
-                    return ListTile(
-                      title: Text(
-                        name.isEmpty
-                            ? (userData['email'] ?? match['userId'])
-                            : name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Match: $percent%',
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.matchDetail,
-                          arguments: match,
-                        );
-                      },
+                  subtitle: Text(
+                    'Match: $percent%',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.matchDetail,
+                      arguments: match,
                     );
                   },
-                ),
+                );
+              },
+            ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: colorScheme.surfaceContainerHighest,
         selectedItemColor: colorScheme.primary,

@@ -2,64 +2,51 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:movies_app/models/matchmodel.dart';
 
-// Lower-case constant name to follow linter conventions
 const double minMatchPercentage = 75.0;
 
 class MatchingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // final FirebaseFirestore _firestore declared below
 
-  // Calculer le pourcentage de correspondance entre deux listes de films
+  // Helper: read favorite movie IDs from the user's `favorites` subcollection.
+  Future<List<String>> _getFavoriteIdsForUser(String userId) async {
+    try {
+      final favSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('favorites')
+          .get();
+
+      return favSnapshot.docs.map((d) => d.id).toList();
+    } catch (e) {
+      debugPrint('Error fetching favorites for $userId: $e');
+      return [];
+    }
+  }
+
+  // Calculates Jaccard similarity (common / union) as percentage.
   double calculateMatchPercentage(
     List<String> userMovies,
     List<String> otherUserMovies,
   ) {
-    if (userMovies.isEmpty || otherUserMovies.isEmpty) {
-      return 0.0;
-    }
+    if (userMovies.isEmpty || otherUserMovies.isEmpty) return 0.0;
 
-    // Trouver les films en commun
-    final commonMovies = userMovies
-        .where((movie) => otherUserMovies.contains(movie))
-        .toList();
-
-    // Calculer le pourcentage basé sur l'union des deux listes
-    final totalUniqueMovies = {...userMovies, ...otherUserMovies}.length;
-
-    if (totalUniqueMovies == 0) return 0.0;
-
-    return (commonMovies.length / totalUniqueMovies) * 100;
+    final common = userMovies.where((m) => otherUserMovies.contains(m)).length;
+    final union = {...userMovies, ...otherUserMovies}.length;
+    if (union == 0) return 0.0;
+    return (common / union) * 100.0;
   }
 
-  // Trouver les films en commun
-  List<String> findCommonMovies(
-    List<String> userMovies,
-    List<String> otherUserMovies,
-  ) {
-    return userMovies
-        .where((movie) => otherUserMovies.contains(movie))
-        .toList();
+  List<String> findCommonMovies(List<String> a, List<String> b) {
+    return a.where((m) => b.contains(m)).toList();
   }
 
-  // Trouver tous les matches pour un utilisateur
+  // Find all matches for a user by reading favorites from favorites subcollections.
   Future<List<Map<String, dynamic>>> findMatchesForUser(String userId) async {
     try {
-      // Récupérer l'utilisateur actuel
-      final currentUserDoc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .get();
+      // Get current user's favorite ids from subcollection
+      final currentUserMovies = await _getFavoriteIdsForUser(userId);
 
-      if (!currentUserDoc.exists) {
-        throw Exception('Utilisateur non trouvé');
-      }
-
-      final currentUserData = currentUserDoc.data()!;
-      final currentUserMovies = List<String>.from(
-        currentUserData['favoriteMovies'] ?? [],
-      );
-
-      // Récupérer tous les autres utilisateurs actifs
+      // Get all active users
       final usersSnapshot = await _firestore
           .collection('users')
           .where('isActive', isEqualTo: true)
@@ -68,37 +55,30 @@ class MatchingService {
       List<Map<String, dynamic>> matches = [];
 
       for (var userDoc in usersSnapshot.docs) {
-        // Ignorer l'utilisateur actuel
         if (userDoc.id == userId) continue;
 
-        final otherUserData = userDoc.data();
-        final otherUserMovies = List<String>.from(
-          otherUserData['favoriteMovies'] ?? [],
-        );
+        // Read other user's favorites from their subcollection
+        final otherUserMovies = await _getFavoriteIdsForUser(userDoc.id);
 
-        // Calculer le pourcentage de correspondance
         final matchPercentage = calculateMatchPercentage(
           currentUserMovies,
           otherUserMovies,
         );
 
-        // Ne garder que les matches >= seuil configurable
         if (matchPercentage >= minMatchPercentage) {
           final commonMovies = findCommonMovies(
             currentUserMovies,
             otherUserMovies,
           );
-
           matches.add({
             'userId': userDoc.id,
-            'userData': otherUserData,
+            'userData': userDoc.data(),
             'matchPercentage': matchPercentage,
             'commonMovies': commonMovies,
           });
         }
       }
 
-      // Trier par pourcentage décroissant
       matches.sort(
         (a, b) => (b['matchPercentage'] as double).compareTo(
           a['matchPercentage'] as double,
@@ -112,7 +92,7 @@ class MatchingService {
     }
   }
 
-  // Sauvegarder un match dans la collection (optionnel - pour cache)
+  // Save and retrieval methods kept for compatibility (optional caching)
   Future<void> saveMatch(Match match) async {
     try {
       await _firestore
@@ -125,27 +105,19 @@ class MatchingService {
     }
   }
 
-  // Récupérer un match existant
   Future<Match?> getMatch(String userId1, String userId2) async {
     try {
       final matchDoc = await _firestore
           .collection('matches')
           .doc('${userId1}_$userId2')
           .get();
+      if (matchDoc.exists) return Match.fromFirestore(matchDoc);
 
-      if (matchDoc.exists) {
-        return Match.fromFirestore(matchDoc);
-      }
-
-      // Essayer l'inverse
-      final reverseMatchDoc = await _firestore
+      final reverse = await _firestore
           .collection('matches')
           .doc('${userId2}_$userId1')
           .get();
-
-      if (reverseMatchDoc.exists) {
-        return Match.fromFirestore(reverseMatchDoc);
-      }
+      if (reverse.exists) return Match.fromFirestore(reverse);
 
       return null;
     } catch (e) {
@@ -154,21 +126,18 @@ class MatchingService {
     }
   }
 
-  // Recalculer tous les matches d'un utilisateur
   Future<void> recalculateMatchesForUser(String userId) async {
     try {
       final matches = await findMatchesForUser(userId);
-
-      for (var matchData in matches) {
+      for (var m in matches) {
         final match = Match(
-          id: '${userId}_${matchData['userId']}',
+          id: '${userId}_${m['userId']}',
           userId1: userId,
-          userId2: matchData['userId'],
-          matchPercentage: (matchData['matchPercentage'] as num).toDouble(),
-          commonMovies: List<String>.from(matchData['commonMovies'] ?? []),
+          userId2: m['userId'],
+          matchPercentage: (m['matchPercentage'] as num).toDouble(),
+          commonMovies: List<String>.from(m['commonMovies'] ?? []),
           lastCalculated: DateTime.now(),
         );
-
         await saveMatch(match);
       }
     } catch (e) {

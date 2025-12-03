@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movies_app/services/admin_service.dart';
+import 'package:movies_app/services/movie_service.dart';
 import 'package:movies_app/constants/app_routes.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -48,9 +49,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       context,
                       AppRoutes.addMovie,
                     );
-                    // Refresh stats if a movie was added
+                    // Refresh stats and go to Discover if a movie was added
                     if (result == true) {
                       _refreshStats();
+                      // Clear API cache so MovieService recomputes lists
+                      MovieService().clearCache();
+                      // Navigate to movies list so the admin sees the new movie immediately
+                      Navigator.pushNamed(context, AppRoutes.moviesList);
                     }
                   },
                   icon: const Icon(Icons.add),
@@ -396,7 +401,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isActive ? Icons.person_outline : Icons.person_off_outlined,
+                            isActive
+                                ? Icons.person_outline
+                                : Icons.person_off_outlined,
                             color: Colors.white,
                             size: 16,
                           ),
