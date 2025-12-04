@@ -74,7 +74,6 @@ class AuthService {
 
   // Firebase Auth error handling
   String _handleAuthException(FirebaseAuthException e) {
-    print('FirebaseAuthException: ${e.code} - ${e.message}');
     switch (e.code) {
       // Email/Password errors
       case 'invalid-credential':

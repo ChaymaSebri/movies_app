@@ -655,7 +655,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       // Sign Up Button
                       SizedBox(
                         width: double.infinity,
-                        height: 54,
+                        height: 40,
                         child: FilledButton(
                           onPressed: _isLoading ? null : _handleSignUp,
                           style: FilledButton.styleFrom(

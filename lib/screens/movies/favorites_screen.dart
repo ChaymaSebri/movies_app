@@ -8,7 +8,7 @@ import 'package:movies_app/models/movie_model.dart';
 import 'package:movies_app/constants/app_routes.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({Key? key}) : super(key: key);
+  const FavoritesScreen({super.key});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
