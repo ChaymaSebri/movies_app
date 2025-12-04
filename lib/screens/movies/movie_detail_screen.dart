@@ -121,11 +121,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       if (mounted) setState(() => isFavorite = !isFavorite);
 
       if (mounted) {
-        final theme = Theme.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isFavorite ? "Added to favorites!" : "Removed from favorites",
               isFavorite ? "Added to favorites!" : "Removed from favorites",
             ),
             backgroundColor: isFavorite 
@@ -154,16 +152,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     // Show loading while checking user or loading movie
     if (_isLoadingUser || _isLoadingMovie) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
       return Scaffold(
         backgroundColor: colorScheme.surface,
         body: Center(
@@ -174,8 +164,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
     // User not logged in (should not happen due to redirect)
     if (_currentUserId == null) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
       return Scaffold(
         backgroundColor: colorScheme.surface,
         body: Center(
@@ -191,15 +179,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (_movie == null || _errorMessage != null) {
       return Scaffold(
         backgroundColor: colorScheme.surface,
-        backgroundColor: colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
             icon: Icon(
-            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: colorScheme.onSurface,
               color: colorScheme.onSurface,
             ),
             onPressed: () => Navigator.pop(context),
@@ -217,17 +202,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final movie = _movie!;
 
     // Backdrop URL logic (TMDB + Cloudinary)
-    // Backdrop URL logic (TMDB + Cloudinary)
     String getBackdropUrl() {
       if (movie.backdropUrl != null && movie.backdropUrl!.isNotEmpty) {
         return movie.backdropUrl!;
       }
-      // 2. Otherwise, generate a large poster based on source
+      // Otherwise, generate a large poster based on source
       final poster = movie.posterUrl;
       if (poster.contains('cloudinary.com')) {
         return poster.replaceAll('/upload/', '/upload/w_1280,c_limit,q_auto,f_auto/');
       } else if (poster.contains('image.tmdb.org') || poster.contains('themoviedb.org')) {
-        // TMDB → use original size
         return poster.replaceAll(RegExp(r'w\d+'), 'original');
       } else {
         return poster;
@@ -237,17 +220,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final String finalBackdrop = getBackdropUrl();
     final year = movie.releaseDate?.year.toString() ?? "Unknown";
     final duration = movie.runtime != null ? "${movie.runtime} min" : "Unknown duration";
-    final year = movie.releaseDate?.year.toString() ?? "Unknown";
-    final duration = movie.runtime != null ? "${movie.runtime} min" : "Unknown duration";
     final rating = movie.rating != null ? movie.rating!.toStringAsFixed(1) : "N/A";
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      backgroundColor: colorScheme.surface,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -304,10 +282,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Year + Duration
-                  // Year + Duration
                   Row(
                     children: [
-                      Icon(
                       Icon(
                         Icons.calendar_today_rounded,
                         color: colorScheme.onSurface.withAlpha((0.6 * 255).round()),
@@ -323,7 +299,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                       const SizedBox(width: 30),
                       Icon(
-                      Icon(
                         Icons.access_time_rounded,
                         color: colorScheme.onSurface.withAlpha((0.6 * 255).round()),
                         size: 20,
@@ -338,9 +313,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     ],
                   ),
-                  
                   const SizedBox(height: 20),
-                  
                   // Genres
                   if (movie.genres.isNotEmpty)
                     Wrap(
@@ -348,10 +321,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       runSpacing: 10,
                       children: movie.genres
                           .map((g) => _buildGenreChip(g, colorScheme))
-                          .map((g) => _buildGenreChip(g, colorScheme))
                           .toList(),
                     ),
-                  
                   const SizedBox(height: 30),
                   // Rating
                   Row(
@@ -376,7 +347,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               ),
                             ),
                             Icon(
-                            Icon(
                               Icons.star_rounded,
                               color: colorScheme.primary,
                               size: 20,
@@ -385,7 +355,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      Column(
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -408,11 +377,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     ],
                   ),
-                  
                   const SizedBox(height: 40),
-                  
                   // Synopsis
-                  Text(
                   Text(
                     "Synopsis",
                     style: TextStyle(
@@ -425,7 +391,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   Text(
                     movie.description.isEmpty
                         ? "No synopsis available."
-                        ? "No synopsis available."
                         : movie.description,
                     style: TextStyle(
                       color: colorScheme.onSurface.withAlpha((0.7 * 255).round()),
@@ -433,7 +398,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       height: 1.7,
                     ),
                   ),
-                  
                   const SizedBox(height: 60),
                   // Favorites Button
                   SizedBox(
@@ -446,14 +410,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         foregroundColor: colorScheme.onSurface,
                         side: BorderSide(
                           color: colorScheme.primary,
-                          width: 2.5,
+                          width: 2,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
-                          side: BorderSide(
-                            color: colorScheme.primary,
-                            width: 2,
-                          ),
                         ),
                         elevation: 8,
                         shadowColor: colorScheme.primary.withAlpha(
@@ -462,12 +422,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                       child: isLoadingFavorite
                           ? SizedBox(
-                          ? SizedBox(
                               width: 28,
                               height: 28,
                               child: CircularProgressIndicator(
                                 strokeWidth: 3,
-                                color: colorScheme.primary,
                                 color: colorScheme.primary,
                               ),
                             )
@@ -488,8 +446,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   isFavorite
                                       ? "Remove from favorites"
                                       : "Add to favorites",
-                                      ? "Remove from favorites"
-                                      : "Add to favorites",
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -499,7 +455,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             ),
                     ),
                   ),
-                  
                   const SizedBox(height: 40),
                 ],
               ),
@@ -514,8 +469,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return Chip(
       label: Text(
         genre,
-        style: TextStyle(
-          color: colorScheme.onPrimary,
         style: TextStyle(
           color: colorScheme.onPrimary,
           fontSize: 14,
